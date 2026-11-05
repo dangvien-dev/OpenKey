@@ -47,5 +47,8 @@ public:
 	static wstring getVersionString();
 
 	static wstring getContentOfUrl(LPCTSTR url);
+
+	//Start OpenKeyUpdate.exe that sits next to this exe. Returns false if it could not be started.
+	static bool launchUpdater();
 };
 

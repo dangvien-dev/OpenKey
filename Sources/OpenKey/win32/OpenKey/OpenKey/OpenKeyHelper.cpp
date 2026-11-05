@@ -377,6 +377,20 @@ wstring OpenKeyHelper::getVersionString() {
 	}
 }
 
+bool OpenKeyHelper::launchUpdater() {
+	//Don't use GetCurrentDirectory: when OpenKey is started at logon (Run key / Task Scheduler)
+	//the working directory is C:\Windows\System32, not the folder of the exe.
+	wstring dir = getFullPath();
+	size_t slash = dir.find_last_of(L"\\/");
+	if (slash == wstring::npos) {
+		return false;
+	}
+	dir.resize(slash + 1); //keep the trailing backslash
+	wstring updater = dir + L"OpenKeyUpdate.exe";
+	//OpenKeyUpdate replaces files relative to its working directory, so start it in our folder
+	return (INT_PTR)ShellExecuteW(NULL, L"open", updater.c_str(), NULL, dir.c_str(), SW_SHOWNORMAL) > 32;
+}
+
 wstring OpenKeyHelper::getContentOfUrl(LPCTSTR url){
 	//GetTempPath2 only exists on Windows 11 / Server 2022; importing it stops the exe from loading on Windows 10.
 	//GetTempPath returns the path with a trailing backslash.

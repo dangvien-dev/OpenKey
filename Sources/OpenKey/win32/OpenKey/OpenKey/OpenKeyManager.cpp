@@ -62,32 +62,50 @@ bool OpenKeyManager::checkUpdate(string& newVersion) {
 	size_t posBegin = string::npos;
 	size_t posEnd = string::npos;
 
+	//every find() is checked before it is used: a failed download (empty data) or an unexpected
+	//document must not turn npos into an offset
 	posBegin = data.find("latestWinVersion");
+	if (posBegin == string::npos) {
+		return false;
+	}
 	posBegin = data.find(versionNameStr, posBegin);
+	if (posBegin == string::npos) {
+		return false;
+	}
 	posBegin += (sizeof(versionNameStr) - 1);
 	posBegin = data.find('\"', posBegin);
+	if (posBegin == string::npos) {
+		return false;
+	}
 	posBegin = data.find_first_of(numbers, posBegin);
+	if (posBegin == string::npos) {
+		return false;
+	}
 
 	posEnd = data.find('\"', posBegin);
-
-	if (posBegin == string::npos || posEnd == string::npos) {
+	if (posEnd == string::npos) {
 		return false;
 	}
 
 	newVersion = data.substr(posBegin, posEnd - posBegin);
 
-	posBegin = posEnd;
-	posBegin = data.find(versionCodeStr, posBegin);
+	posBegin = data.find(versionCodeStr, posEnd);
+	if (posBegin == string::npos) {
+		return false;
+	}
 	posBegin += (sizeof(versionCodeStr) - 1);
 
 	posEnd = data.find("}", posBegin);
-
-	if (posBegin == string::npos || posEnd == string::npos) {
+	if (posEnd == string::npos) {
 		return false;
 	}
 
+	//version code layout (see OpenKeyHelper::getVersionNumber): major | minor << 8 | build << 16.
+	//Reorder it so that major is the most significant byte, then minor, then build.
+	//Each byte has to be masked, otherwise minor leaks into the top byte and a major bump
+	//(e.g. 2.1.0 -> 3.0.0) is not detected as an update.
 	auto shiftVersion = [](DWORD version) {
-		return (version << 16) | (version & 0x00FF00) | (version >> 16 & 0xFF);
+		return ((version & 0xFF) << 16) | (version & 0x00FF00) | ((version >> 16) & 0xFF);
 		};
 
 	string newVersionCodeStr = data.substr(posBegin, posEnd - posBegin);

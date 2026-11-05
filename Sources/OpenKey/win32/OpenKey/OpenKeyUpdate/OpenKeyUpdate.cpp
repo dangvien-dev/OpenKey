@@ -24,6 +24,7 @@ using namespace std;
 
 INT_PTR CALLBACK MainDialogProcess(HWND, UINT, WPARAM, LPARAM);
 void StartUpdate();
+static void SetWorkingDirectoryToExeFolder();
 HWND hDlg;
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -32,6 +33,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+
+    SetWorkingDirectoryToExeFolder();
 
 	hDlg = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG_UPDATER), 0, MainDialogProcess, 0);
 	ShowWindow(hDlg, SW_SHOWNORMAL);
@@ -71,61 +74,135 @@ INT_PTR CALLBACK MainDialogProcess(HWND hDlg, UINT message, WPARAM wParam, LPARA
     return (INT_PTR)FALSE;
 }
 
+//OpenKeyUpdate works with files relative to its own folder. OpenKey starts it with that folder as
+//working directory, but make sure of it when it is started by hand or by an older OpenKey
+//(which used its own working directory, e.g. C:\Windows\System32 when started at logon).
+static void SetWorkingDirectoryToExeFolder() {
+	WCHAR self[MAX_PATH];
+	DWORD len = GetModuleFileNameW(NULL, self, MAX_PATH);
+	if (len == 0 || len >= MAX_PATH) {
+		return;
+	}
+	WCHAR* slash = wcsrchr(self, L'\\');
+	if (slash != NULL) {
+		*(slash + 1) = 0;
+		SetCurrentDirectoryW(self);
+	}
+}
+
+static void FailAndExit() {
+	MessageBox(hDlg, _T("Có lỗi trong quá trình cập nhật, vui lòng thử lại sau!"), _T("OpenKey Update"), MB_OK);
+	ExitProcess(0);
+}
+
+//The version name comes from a downloaded file and ends up in a URL and a file name: accept digits and dots only.
+static bool IsSafeVersionName(const wstring& version) {
+	if (version.empty() || version.size() > 31) {
+		return false;
+	}
+	for (size_t i = 0; i < version.size(); i++) {
+		if (!((version[i] >= L'0' && version[i] <= L'9') || version[i] == L'.')) {
+			return false;
+		}
+	}
+	return true;
+}
+
+//Run a hidden process and wait for it to finish (the old code started PowerShell and just slept 5 seconds).
+static bool RunHiddenAndWait(const wstring& commandLine, DWORD timeoutMs) {
+	wstring cmd = commandLine; //CreateProcessW may modify the buffer
+	STARTUPINFOW si = { sizeof(si) };
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_HIDE;
+	PROCESS_INFORMATION pi = {};
+	if (!CreateProcessW(NULL, &cmd[0], NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+		return false;
+	}
+	bool finished = WaitForSingleObject(pi.hProcess, timeoutMs) == WAIT_OBJECT_0;
+	if (!finished) {
+		TerminateProcess(pi.hProcess, 1);
+	}
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+	return finished;
+}
+
+static void CleanUpUpdateFiles(const wstring& zipPath) {
+	DeleteFile(zipPath.c_str());
+	DeleteFile(L"_OpenKeyUpdate\\OpenKeyUpdate.exe");
+	DeleteFile(L"_OpenKeyUpdate\\OpenKey64.exe");
+	DeleteFile(L"_OpenKeyUpdate\\OpenKey32.exe");
+	RemoveDirectory(L".\\_OpenKeyUpdate");
+}
+
 DWORD WINAPI UpdateThreadFunction(LPVOID lpParam) {
-	WCHAR path[MAX_PATH];
 	WCHAR currentDir[MAX_PATH];
-	GetCurrentDirectory(MAX_PATH, currentDir);
-	wsprintf(path, TEXT("%s\\_OpenKey.tempf"), currentDir);
-	HRESULT res = URLDownloadToFile(NULL, L"https://raw.githubusercontent.com/tuyenvm/OpenKey/master/version.json", path, 0, NULL);
+	DWORD currentDirLen = GetCurrentDirectory(MAX_PATH, currentDir);
+	if (currentDirLen == 0 || currentDirLen >= MAX_PATH) {
+		FailAndExit();
+	}
+	wstring path = wstring(currentDir) + L"\\_OpenKey.tempf";
+	HRESULT res = URLDownloadToFile(NULL, L"https://raw.githubusercontent.com/tuyenvm/OpenKey/master/version.json", path.c_str(), 0, NULL);
 
 	wstring data;
 	if (res == S_OK) {
-		std::wifstream t(path);
+		std::wifstream t(path.c_str());
 		std::wstringstream buffer;
 		buffer << t.rdbuf();
 		t.close();
-		DeleteFile(path);
+		DeleteFile(path.c_str());
 		data = buffer.str();
 	} else {
-		MessageBox(hDlg, _T("Có lỗi trong quá trình cập nhật, vui lòng thử lại sau!"), _T("OpenKey Update"), MB_OK);
-		ExitProcess(0);
-		return 0;
+		FailAndExit();
 	}
 
-	//simple parse
-	data = data.substr(data.find(L"latestWinVersion"));
-	data = data.substr(data.find(L"\"versionName\":"));
-	data = data.substr(14);
-	data = data.substr(data.find(L"\""));
-	data = data.substr(1);
-	wstring versionName = data.substr(0, data.find(L"\""));
-	
+	//simple parse; every find() is checked, substr(npos) would throw and kill the updater
+	size_t pos = data.find(L"latestWinVersion");
+	if (pos == wstring::npos) FailAndExit();
+	pos = data.find(L"\"versionName\":", pos);
+	if (pos == wstring::npos) FailAndExit();
+	pos = data.find(L'"', pos + 14); //opening quote of the value
+	if (pos == wstring::npos) FailAndExit();
+	size_t endPos = data.find(L'"', pos + 1);
+	if (endPos == wstring::npos) FailAndExit();
+	wstring versionName = data.substr(pos + 1, endPos - pos - 1);
+	if (!IsSafeVersionName(versionName)) FailAndExit();
+
 	//download zip file
-	WCHAR updateUrl[MAX_PATH];
-	wsprintf(updateUrl, TEXT("https://github.com/tuyenvm/OpenKey/releases/download/%s/OpenKey%s-Windows.zip"),
-		versionName.c_str(),
-		versionName.c_str());
-	wsprintf(path, TEXT("%s\\_OpenKeyUpdate.zip"), currentDir);
-	res = URLDownloadToFile(NULL, updateUrl, path, 0, NULL);
-
-	if (res == S_OK) {
-		//remove old file
-		DeleteFile(L"OpenKey64.exe");
-		//extract zip file
-		WinExec("powershell.exe -NoP -NonI -Command \"Expand-Archive '.\\_OpenKeyUpdate.zip' '.\\_OpenKeyUpdate'\" ", SW_HIDE);
-		Sleep(5000);
-		MoveFile(L"_OpenKeyUpdate\\OpenKey64.exe", L"OpenKey64.exe");
-		DeleteFile(path);
-		DeleteFile(L"_OpenKeyUpdate\\OpenKeyUpdate.exe");
-		DeleteFile(L"_OpenKeyUpdate\\OpenKey64.exe");
-		DeleteFile(L"_OpenKeyUpdate\\OpenKey32.exe");
-		RemoveDirectory(L".\\_OpenKeyUpdate");
-		MessageBox(hDlg, _T("Bạn đã cập nhật OpenKey bản mới nhất thành công!"), _T("OpenKey Update"), MB_OK);
-		ExitProcess(0);
-	} else {
-		MessageBox(hDlg, _T("Có lỗi trong quá trình cập nhật, vui lòng thử lại sau!"), _T("OpenKey Update"), MB_OK);
-		ExitProcess(0);
+	wstring updateUrl = L"https://github.com/tuyenvm/OpenKey/releases/download/" + versionName +
+		L"/OpenKey" + versionName + L"-Windows.zip";
+	wstring zipPath = wstring(currentDir) + L"\\_OpenKeyUpdate.zip";
+	res = URLDownloadToFile(NULL, updateUrl.c_str(), zipPath.c_str(), 0, NULL);
+	if (res != S_OK) {
+		FailAndExit();
 	}
+
+	//extract zip file and wait for it; -Force because a previous failed attempt may have left files behind
+	RunHiddenAndWait(L"powershell.exe -NoP -NonI -Command \"Expand-Archive -Force '.\\_OpenKeyUpdate.zip' '.\\_OpenKeyUpdate'\"", 120000);
+
+	//Only touch the installed exe once the new one is really there. The old code deleted OpenKey64.exe
+	//first, so an extraction that was slow or failed (no PowerShell 5) left the user without OpenKey.
+	if (GetFileAttributes(L"_OpenKeyUpdate\\OpenKey64.exe") == INVALID_FILE_ATTRIBUTES) {
+		CleanUpUpdateFiles(zipPath);
+		FailAndExit();
+	}
+
+	//OpenKey may still be shutting down (an exe cannot be replaced while it runs): retry for up to 10 seconds
+	bool replaced = false;
+	for (int attempt = 0; attempt < 20 && !replaced; attempt++) {
+		replaced = MoveFileEx(L"_OpenKeyUpdate\\OpenKey64.exe", L"OpenKey64.exe",
+			MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED) != FALSE;
+		if (!replaced) {
+			Sleep(500);
+		}
+	}
+	CleanUpUpdateFiles(zipPath);
+	if (!replaced) {
+		FailAndExit();
+	}
+
+	MessageBox(hDlg, _T("Bạn đã cập nhật OpenKey bản mới nhất thành công!"), _T("OpenKey Update"), MB_OK);
+	ExitProcess(0);
 	return 0;
 }
 
