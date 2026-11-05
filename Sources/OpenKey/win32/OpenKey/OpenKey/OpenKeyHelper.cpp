@@ -91,24 +91,42 @@ BYTE * OpenKeyHelper::getRegBinary(LPCTSTR key, DWORD& outSize) {
 	return _regData;
 }
 
+//Start a hidden process without waiting for it.
+//Replaces WinExec, which only takes an ANSI command line: a UTF-8 path containing
+//non-ASCII characters (a user folder with Vietnamese diacritics) was turned into garbage.
+//(keep this file ASCII-only: it has no BOM, MSVC would read it with the ANSI code page)
+static void runHidden(const wstring& commandLine) {
+	wstring cmd = commandLine; //CreateProcessW may modify the buffer
+	STARTUPINFOW si = { sizeof(si) };
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_HIDE;
+	PROCESS_INFORMATION pi = {};
+	if (CreateProcessW(NULL, &cmd[0], NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+	}
+}
+
 void OpenKeyHelper::registerRunOnStartup(const int& val) {
+	HKEY hRunKey = NULL;
 	if (val) {
+		//quote the path: it may contain spaces
+		wstring quotedPath = L"\"" + getFullPath() + L"\"";
 		if (vRunAsAdmin) {
-			string path = wideStringToUtf8(getFullPath());
-			char buff[MAX_PATH];
-			sprintf_s(buff, "schtasks /create /sc onlogon /tn OpenKey /rl highest /tr \"%s\" /f", path.c_str());
-			WinExec(buff, SW_HIDE);
+			//schtasks needs the inner quotes escaped: /tr "\"C:\path with space\OpenKey.exe\""
+			runHidden(L"schtasks /create /sc onlogon /tn OpenKey /rl highest /tr \"\\\"" + getFullPath() + L"\\\"\" /f");
 		} else {
-			RegOpenKeyEx(HKEY_CURRENT_USER, _runOnStartupKeyPath, NULL, KEY_ALL_ACCESS, &hKey);
-			wstring path = getFullPath();
-			RegSetValueEx(hKey, _T("OpenKey"), 0, REG_SZ, (byte*)path.c_str(), ((DWORD)path.size() + 1) * sizeof(TCHAR));
-			RegCloseKey(hKey);
+			if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_CURRENT_USER, _runOnStartupKeyPath, 0, KEY_SET_VALUE, &hRunKey)) {
+				RegSetValueEx(hRunKey, _T("OpenKey"), 0, REG_SZ, (const BYTE*)quotedPath.c_str(), ((DWORD)quotedPath.size() + 1) * sizeof(TCHAR));
+				RegCloseKey(hRunKey);
+			}
 		}
 	} else {
-		RegOpenKeyEx(HKEY_CURRENT_USER, _runOnStartupKeyPath, NULL, KEY_ALL_ACCESS, &hKey);
-		RegDeleteValue(hKey, _T("OpenKey"));
-		RegCloseKey(hKey);
-		WinExec("schtasks /delete  /tn OpenKey /f", SW_HIDE);
+		if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_CURRENT_USER, _runOnStartupKeyPath, 0, KEY_SET_VALUE, &hRunKey)) {
+			RegDeleteValue(hRunKey, _T("OpenKey"));
+			RegCloseKey(hRunKey);
+		}
+		runHidden(L"schtasks /delete /tn OpenKey /f");
 	}
 }
 
@@ -123,19 +141,32 @@ LPTSTR OpenKeyHelper::getExecutePath() {
 
 string& OpenKeyHelper::getFrontMostAppExecuteName() {
 	_tempWnd = GetForegroundWindow();
+	_tempProcessId = 0;
 	GetWindowThreadProcessId(_tempWnd, &_tempProcessId);
+	if (_tempProcessId == 0) { //no foreground window right now (e.g. while switching): keep the last known app
+		return _exeNameUtf8;
+	}
 	if (_tempProcessId == _cacheProcessId) {
 		return _exeNameUtf8;
 	}
 	_cacheProcessId = _tempProcessId;
-	_proc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, _tempProcessId);
-	GetProcessImageFileName((HMODULE)_proc, _exePath, 1024);
-	CloseHandle(_proc);
-	
+	//Clear first: if the query below fails, _exePath would otherwise keep the PREVIOUS app's path
+	//and the smart-switch settings of that app would be applied to this one.
+	_exePath[0] = 0;
+	//PROCESS_QUERY_LIMITED_INFORMATION is enough for GetProcessImageFileName and, unlike
+	//PROCESS_QUERY_INFORMATION, also works for elevated processes when OpenKey is not run as admin.
+	_proc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, _tempProcessId);
+	if (_proc != NULL) {
+		GetProcessImageFileName((HMODULE)_proc, _exePath, 1024);
+		CloseHandle(_proc);
+	}
+
 	if (wcscmp(_exePath, _T("")) == 0) {
+		_cacheProcessId = 0; //don't cache a failed lookup, otherwise the cached branch above returns the previous app's name
 		return _unknownProgram;
 	}
-	_exeName = _tcsrchr(_exePath, '\\') + 1;
+	LPCTSTR lastSlash = _tcsrchr(_exePath, '\\');
+	_exeName = lastSlash ? lastSlash + 1 : _exePath;
 	if (wcscmp(_exeName, _T("OpenKey64.exe")) == 0 ||
 		wcscmp(_exeName, _T("OpenKey32.exe")) == 0 || 
 		wcscmp(_exeName, _T("explorer.exe")) == 0) {
@@ -235,46 +266,63 @@ bool OpenKeyHelper::quickConvert() {
 		return false;
 	}
 
-	string dataHTML, dataRTF;
+	string dataHTML;
 	wstring dataUnicode;
 
-	char* pHTML = 0, pRTF = 0;
-	wchar_t* pUnicode = 0;
-
-	//HTML
+	//HTML; read the data while the memory is locked
 	HANDLE hData = GetClipboardData(CF_HTML);
 	if (hData) {
-		pHTML = static_cast<char*>(GlobalLock(hData));
-		GlobalUnlock(hData);
-	}
-	if (pHTML) {
-		dataHTML = pHTML;
-		dataHTML = convertUtil(dataHTML);
+		const char* pHTML = static_cast<const char*>(GlobalLock(hData));
+		if (pHTML) {
+			dataHTML = convertUtil(string(pHTML));
+			GlobalUnlock(hData);
+		}
 	}
 
 	//UNICODE
 	hData = GetClipboardData(CF_UNICODETEXT);
 	if (hData) {
-		pUnicode = static_cast<wchar_t*>(GlobalLock(hData));
-		GlobalUnlock(hData);
-	}
-	if (pUnicode) {
-		dataUnicode = pUnicode;
-		dataUnicode = utf8ToWideString(convertUtil(wideStringToUtf8(dataUnicode)));
+		const wchar_t* pUnicode = static_cast<const wchar_t*>(GlobalLock(hData));
+		if (pUnicode) {
+			dataUnicode = utf8ToWideString(convertUtil(wideStringToUtf8(wstring(pUnicode))));
+			GlobalUnlock(hData);
+		}
 	}
 
-	OpenClipboard(0);
+	//Nothing we can convert (empty clipboard, image, file list,...): leave the clipboard as it is,
+	//EmptyClipboard() below would destroy the user's data.
+	if (dataHTML.empty() && dataUnicode.empty()) {
+		CloseClipboard();
+		return false;
+	}
+
+	//the clipboard is already open (OpenClipboard above)
 	EmptyClipboard();
 
-	HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, (int)(dataHTML.size() + 1) * sizeof(char));
-	memcpy(GlobalLock(hMem), dataHTML.c_str(), (int)(dataHTML.size() + 1) * sizeof(char));
-	GlobalUnlock(hMem);
-	SetClipboardData(CF_HTML, hMem);
-
-	hMem = GlobalAlloc(GMEM_MOVEABLE, (int)(dataUnicode.size() + 1) * sizeof(wchar_t));
-	memcpy(GlobalLock(hMem), dataUnicode.c_str(), (int)(dataUnicode.size() + 1) * sizeof(wchar_t));
-	GlobalUnlock(hMem);
-	SetClipboardData(CF_UNICODETEXT, hMem);
+	//Only put back the formats that were really on the clipboard: an empty CF_HTML entry makes
+	//rich-text targets (Word, browsers) paste nothing instead of falling back to the plain text.
+	auto putData = [](UINT format, const void* src, size_t bytes) {
+		HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, bytes);
+		if (hMem == NULL) {
+			return;
+		}
+		void* pMem = GlobalLock(hMem);
+		if (pMem == NULL) {
+			GlobalFree(hMem);
+			return;
+		}
+		memcpy(pMem, src, bytes);
+		GlobalUnlock(hMem);
+		if (SetClipboardData(format, hMem) == NULL) {
+			GlobalFree(hMem);
+		}
+	};
+	if (!dataHTML.empty()) {
+		putData(CF_HTML, dataHTML.c_str(), (dataHTML.size() + 1) * sizeof(char));
+	}
+	if (!dataUnicode.empty()) {
+		putData(CF_UNICODETEXT, dataUnicode.c_str(), (dataUnicode.size() + 1) * sizeof(wchar_t));
+	}
 
 	CloseClipboard();
 	return true;
@@ -330,17 +378,22 @@ wstring OpenKeyHelper::getVersionString() {
 }
 
 wstring OpenKeyHelper::getContentOfUrl(LPCTSTR url){
-	WCHAR path[MAX_PATH];
-	GetTempPath2(MAX_PATH, path);
-	wsprintf(path, TEXT("%s\\_OpenKey.tempf"), path);
-	HRESULT res = URLDownloadToFile(NULL, url, path, 0, NULL);
-	
+	//GetTempPath2 only exists on Windows 11 / Server 2022; importing it stops the exe from loading on Windows 10.
+	//GetTempPath returns the path with a trailing backslash.
+	WCHAR tempDir[MAX_PATH];
+	DWORD tempDirLen = GetTempPathW(MAX_PATH, tempDir);
+	if (tempDirLen == 0 || tempDirLen >= MAX_PATH) {
+		return L"";
+	}
+	wstring path = wstring(tempDir) + L"_OpenKey.tempf";
+	HRESULT res = URLDownloadToFile(NULL, url, path.c_str(), 0, NULL);
+
 	if (res == S_OK) {
-		std::wifstream t(path);
+		std::wifstream t(path.c_str());
 		std::wstringstream buffer;
 		buffer << t.rdbuf();
 		t.close();
-		DeleteFile(path);
+		DeleteFile(path.c_str());
 		return buffer.str();
 	} else if (res == E_OUTOFMEMORY) {
 		
