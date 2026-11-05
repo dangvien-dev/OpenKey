@@ -272,7 +272,7 @@ static void SendBackspace() {
 		SendMessage(HWND_BROADCAST, WM_CHAR, VK_BACK, 0L);
 		SendMessage(HWND_BROADCAST, WM_CHAR, VK_BACK, 0L);
 	}
-	if (IS_DOUBLE_CODE(vCodeTable)) { //VNI or Unicode Compound
+	if (IS_DOUBLE_CODE(vCodeTable) && !_syncKey.empty()) { //VNI or Unicode Compound
 		if (_syncKey.back() > 1) {
 			/*if (!(vCodeTable == 3 && containUnicodeCompoundApp(FRONT_APP))) {
 				SendInput(2, backspaceEvent, sizeof(INPUT));
@@ -301,8 +301,10 @@ static void SendEmptyCharacter() {
 static void SendNewCharString(const bool& dataFromMacro = false) {
 	_j = 0;
 	_newCharSize = dataFromMacro ? (Uint16)pData->macroData.size() : pData->newCharCount;
-	if (_newCharString.size() < _newCharSize) {
-		_newCharString.resize(_newCharSize);
+	//each source element can expand to 2 UTF-16 units (VNI / Unicode Compound),
+	//plus 1 for the restored key and 1 for the NUL terminator
+	if (_newCharString.size() < (size_t)_newCharSize * 2 + 2) {
+		_newCharString.resize((size_t)_newCharSize * 2 + 2);
 	}
 	_willSendControlKey = false;
 	
@@ -368,11 +370,23 @@ static void SendNewCharString(const bool& dataFromMacro = false) {
 		startNewSession();
 	}
 
-	OpenKeyHelper::setClipboardText((LPCTSTR)_newCharString.data(), _newCharSize + 1, CF_UNICODETEXT);
+	//the vector is reused between calls, so terminate the string explicitly instead of
+	//relying on whatever the previous (possibly longer) string left behind
+	_newCharString[_j] = 0;
 
-	//Send shift + insert
-	SendCombineKey(KEY_LEFT_SHIFT, VK_INSERT, 0, KEYEVENTF_EXTENDEDKEY);
-	
+	if (OpenKeyHelper::setClipboardText((LPCTSTR)_newCharString.data(), _j + 1, CF_UNICODETEXT)) {
+		//Send shift + insert
+		SendCombineKey(KEY_LEFT_SHIFT, VK_INSERT, 0, KEYEVENTF_EXTENDEDKEY);
+	} else {
+		//clipboard is held by another process: type the characters directly,
+		//otherwise Shift+Insert would paste whatever stale text is on the clipboard
+		for (_k = 0; _k < _j; _k++) {
+			prepareUnicodeEvent(keyEvent[0], _newCharString[_k], true);
+			prepareUnicodeEvent(keyEvent[1], _newCharString[_k], false);
+			SendInput(2, keyEvent, sizeof(INPUT));
+		}
+	}
+
 	//the case when hCode is vRestore or vRestoreAndStartNewSession,
 	//the word is invalid and last key is control key such as TAB, LEFT ARROW, RIGHT ARROW,...
 	if (_willSendControlKey) {
@@ -499,8 +513,12 @@ LRESULT CALLBACK keyboardHookProcess(int nCode, WPARAM wParam, LPARAM lParam) {
 	//ignore if IME pad is open when typing Japanese/Chinese...
 	HWND hWnd = GetForegroundWindow();
 	HWND hIME = ImmGetDefaultIMEWnd(hWnd);
-	LRESULT isImeON = SendMessage(hIME, WM_IME_CONTROL, IMC_GETOPENSTATUS, 0);
-	if (isImeON) {
+	//A low-level hook must return quickly (LowLevelHooksTimeout), otherwise Windows silently removes it.
+	//A plain SendMessage would block forever on a hung foreground app, so use a timeout.
+	DWORD_PTR isImeON = 0;
+	if (hIME != NULL &&
+		SendMessageTimeout(hIME, WM_IME_CONTROL, IMC_GETOPENSTATUS, 0, SMTO_ABORTIFHUNG, 50, &isImeON) &&
+		isImeON) {
 		return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);
 	}
 	
@@ -571,7 +589,7 @@ LRESULT CALLBACK keyboardHookProcess(int nCode, WPARAM wParam, LPARAM lParam) {
 
 			if (pData->code == vReplaceMaro) { //handle macro in english mode
 				handleMacro();
-				return NULL;
+				return -1; //consume event: handleMacro() already re-sends the trigger key
 			}
 		}
 		return CallNextHookEx(hKeyboardHook, nCode, wParam, lParam);

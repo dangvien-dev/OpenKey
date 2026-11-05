@@ -193,14 +193,38 @@ wstring OpenKeyHelper::getClipboardText(const int& type) {
 	return text;
 }
 
-void OpenKeyHelper::setClipboardText(LPCTSTR data, const int & len, const int& type) {
+bool OpenKeyHelper::setClipboardText(LPCTSTR data, const int & len, const int& type) {
 	HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len * sizeof(WCHAR));
-	memcpy(GlobalLock(hMem), data, len * sizeof(WCHAR));
+	if (hMem == NULL) {
+		return false;
+	}
+	void* pMem = GlobalLock(hMem);
+	if (pMem == NULL) {
+		GlobalFree(hMem);
+		return false;
+	}
+	memcpy(pMem, data, len * sizeof(WCHAR));
 	GlobalUnlock(hMem);
-	OpenClipboard(0);
+
+	//another process (clipboard manager, remote desktop,...) may hold the clipboard for a few ms
+	bool opened = false;
+	for (int attempt = 0; attempt < 5 && !opened; attempt++) {
+		opened = OpenClipboard(NULL) != FALSE;
+		if (!opened) {
+			Sleep(2);
+		}
+	}
+	if (!opened) {
+		GlobalFree(hMem);
+		return false;
+	}
 	EmptyClipboard();
-	SetClipboardData(type, hMem);
+	bool ok = SetClipboardData(type, hMem) != NULL;
 	CloseClipboard();
+	if (!ok) {
+		GlobalFree(hMem); //the system only takes ownership when SetClipboardData succeeds
+	}
+	return ok;
 }
 
 bool OpenKeyHelper::quickConvert() {
