@@ -1,0 +1,6 @@
+A/B baseline branch - DO NOT MERGE.
+
+This branch is identical to master except for this note. It exists only so that CI
+builds the unmodified master code, to compare against the build of
+dangvien-dev/OpenKey#1 when investigating typing glitches in the Windows 11 Notepad.
+Delete the branch and close the pull request once the comparison is done.
