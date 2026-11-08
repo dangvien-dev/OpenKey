@@ -75,11 +75,12 @@ void AppDelegate::checkUpdate() {
 		);
 		if (msgboxID == IDYES) {
 			//Call OpenKeyUpdate
-			WCHAR path[MAX_PATH];
-			GetCurrentDirectory(MAX_PATH, path);
-			wsprintf(path, TEXT("%s\\OpenKeyUpdate.exe"), path);
-			ShellExecute(0, L"", path, 0, 0, SW_SHOWNORMAL);
-			AppDelegate::getInstance()->onOpenKeyExit();
+			if (OpenKeyHelper::launchUpdater()) {
+				AppDelegate::getInstance()->onOpenKeyExit();
+			} else {
+				MessageBox(0, _T("Không mở được OpenKeyUpdate.exe, hãy kiểm tra file này có nằm cùng thư mục với OpenKey không."),
+					_T("OpenKey Update"), MB_ICONERROR | MB_OK);
+			}
 		}
 
 	}

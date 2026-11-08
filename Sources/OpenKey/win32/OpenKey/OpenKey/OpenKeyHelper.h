@@ -38,7 +38,8 @@ public:
 	static wstring getFullPath();
 
 	static wstring getClipboardText(const int& type);
-	static void setClipboardText(LPCTSTR data, const int& len, const int& type);
+	//len is the number of WCHAR (including the NUL terminator); returns false if the clipboard could not be set
+	static bool setClipboardText(LPCTSTR data, const int& len, const int& type);
 
 	static bool quickConvert();
 
@@ -46,5 +47,8 @@ public:
 	static wstring getVersionString();
 
 	static wstring getContentOfUrl(LPCTSTR url);
+
+	//Start OpenKeyUpdate.exe that sits next to this exe. Returns false if it could not be started.
+	static bool launchUpdater();
 };
 
