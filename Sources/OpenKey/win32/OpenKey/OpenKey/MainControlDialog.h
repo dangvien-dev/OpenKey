@@ -37,6 +37,7 @@ private:
 	void onTabIndexChanged();
 	void onUpdateButton();
 	void requestRestartAsAdmin();
+	void drawHeader(LPDRAWITEMSTRUCT dis);
 protected:
 	INT_PTR eventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static INT_PTR CALLBACK tabPageEventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
