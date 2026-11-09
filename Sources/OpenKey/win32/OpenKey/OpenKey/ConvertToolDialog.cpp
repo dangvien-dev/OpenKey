@@ -14,6 +14,7 @@ redistribute your new version, it MUST be open source.
 #include "ConvertToolDialog.h"
 #include "stdafx.h"
 #include "AppDelegate.h"
+#include "Theme.h"
 
 static Uint16 _lastKeyCode;
 
@@ -97,6 +98,11 @@ void ConvertToolDialog::initDialog() {
 
 	SendDlgItemMessage(hDlg, IDOK, BM_SETIMAGE, IMAGE_ICON, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCEW(IDI_ICON_OK_BUTTON)));
 	SendDlgItemMessage(hDlg, IDC_BUTTON_CONVERT_BUTTON, BM_SETIMAGE, IMAGE_ICON, (LPARAM)LoadIcon(hInstance, MAKEINTRESOURCEW(IDI_ICON_START_CONVERT)));
+
+	//skin: nút chính là "Chuyển mã", "Đóng" chỉ là nút phụ
+	Theme::setButtonKind(GetDlgItem(hDlg, IDC_BUTTON_CONVERT_BUTTON), Theme::ButtonKind::Primary, L"\uE895");
+	Theme::setButtonKind(GetDlgItem(hDlg, IDOK), Theme::ButtonKind::Secondary);
+	Theme::setButtonKind(GetDlgItem(hDlg, IDC_BUTTON_CONVERT_SWITCH), Theme::ButtonKind::Secondary, L"\uE8AB");
 
 	fillData();
 }

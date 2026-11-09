@@ -14,6 +14,7 @@ redistribute your new version, it MUST be open source.
 #include "MacroDialog.h"
 #include "stdafx.h"
 #include "AppDelegate.h"
+#include "Theme.h"
 #include <commdlg.h>
 
 #define MAX_MACRO_BUFFER 4096
@@ -95,6 +96,12 @@ void MacroDialog::initDialog() {
 	hMacroContent = GetDlgItem(hDlg, IDC_EDIT_MACRO_CONTENT);
 	hAddButton = GetDlgItem(hDlg, IDC_BUTTON_ADD);
 	hAutoCaps = GetDlgItem(hDlg, IDC_CHECK_AUTO_CAPS);
+
+	//skin
+	Theme::setButtonKind(hAddButton, Theme::ButtonKind::Primary);
+	Theme::setButtonKind(GetDlgItem(hDlg, IDC_BUTTON_DELETE), Theme::ButtonKind::Danger);
+	Theme::setButtonKind(GetDlgItem(hDlg, IDC_BUTTON_IMPORT_MACRO), Theme::ButtonKind::Secondary, L"\uE896");
+	Theme::setButtonKind(GetDlgItem(hDlg, IDC_BUTTON_EXPORT_MACRO), Theme::ButtonKind::Secondary, L"\uE898");
 
 	LVCOLUMN LvCol;
 	memset(&LvCol, 0, sizeof(LvCol));

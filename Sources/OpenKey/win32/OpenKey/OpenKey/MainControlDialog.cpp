@@ -13,6 +13,7 @@ redistribute your new version, it MUST be open source.
 -----------------------------------------------------------*/
 #include "MainControlDialog.h"
 #include "AppDelegate.h"
+#include "Theme.h"
 #include <Shlobj.h>
 #include <Uxtheme.h>
 
@@ -69,23 +70,37 @@ void MainControlDialog::initDialog() {
     TabCtrl_InsertItem(hTab, 3, &tci);
     RECT r;
     TabCtrl_GetItemRect(hTab, 0, &r);
-    TabCtrl_SetItemSize(hTab, r.right - r.left, (r.bottom - r.top) * 1.428f);
+    //skin: tab gạch chân + card. Trả về 0 khi skin tắt (không có visual styles / High Contrast) -> dùng cách tính cũ
+    const int tabHeaderHeight = Theme::styleTabControl(hTab);
+    if (tabHeaderHeight == 0)
+        TabCtrl_SetItemSize(hTab, r.right - r.left, (r.bottom - r.top) * 1.428f);
 
     //create tab page
     hTabPage1 = CreateDialogParam(hIns, MAKEINTRESOURCE(IDD_DIALOG_TAB_GENERAL), hDlg, tabPageEventProc, (LPARAM)this);
     hTabPage2 = CreateDialogParam(hIns, MAKEINTRESOURCE(IDD_DIALOG_TAB_MACRO), hDlg, tabPageEventProc, (LPARAM)this);
     hTabPage3 = CreateDialogParam(hIns, MAKEINTRESOURCE(IDD_DIALOG_TAB_SYSTEM), hDlg, tabPageEventProc, (LPARAM)this);
     hTabPage4 = CreateDialogParam(hIns, MAKEINTRESOURCE(IDD_DIALOG_TAB_INFO), hDlg, tabPageEventProc, (LPARAM)this);
-    RECT rc;//find tab control's rectangle
-    GetWindowRect(hTab, &rc);
-    POINT offset = { 0 };
-    ScreenToClient(hDlg, &offset);
-    OffsetRect(&rc, offset.x, offset.y); //convert to client coordinates
-    rc.top += (LONG)((r.bottom - r.top) * 1.428f);
-    SetWindowPos(hTabPage1, 0, rc.left + 1, rc.top + 3, rc.right - rc.left - 5, rc.bottom - rc.top - 5, SWP_HIDEWINDOW);
-    SetWindowPos(hTabPage2, 0, rc.left + 1, rc.top + 3, rc.right - rc.left - 5, rc.bottom - rc.top - 6, SWP_HIDEWINDOW);
-    SetWindowPos(hTabPage3, 0, rc.left + 1, rc.top + 3, rc.right - rc.left - 5, rc.bottom - rc.top - 6, SWP_HIDEWINDOW);
-    SetWindowPos(hTabPage4, 0, rc.left + 1, rc.top + 3, rc.right - rc.left - 5, rc.bottom - rc.top - 6, SWP_HIDEWINDOW);
+    if (tabHeaderHeight > 0) {
+        //các trang nằm gọn trong "card" của tab (chừa lề để không đè lên góc bo)
+        RECT pr = Theme::tabPageRect(hTab, hDlg);
+        HWND pages[4] = { hTabPage1, hTabPage2, hTabPage3, hTabPage4 };
+        for (int i = 0; i < 4; i++) {
+            SetWindowPos(pages[i], 0, pr.left, pr.top, pr.right - pr.left, pr.bottom - pr.top, SWP_HIDEWINDOW);
+            Theme::applyPage(pages[i]); //sau khi đã có kích thước thật của trang
+        }
+    }
+    else {
+        RECT rc;//find tab control's rectangle
+        GetWindowRect(hTab, &rc);
+        POINT offset = { 0 };
+        ScreenToClient(hDlg, &offset);
+        OffsetRect(&rc, offset.x, offset.y); //convert to client coordinates
+        rc.top += (LONG)((r.bottom - r.top) * 1.428f);
+        SetWindowPos(hTabPage1, 0, rc.left + 1, rc.top + 3, rc.right - rc.left - 5, rc.bottom - rc.top - 5, SWP_HIDEWINDOW);
+        SetWindowPos(hTabPage2, 0, rc.left + 1, rc.top + 3, rc.right - rc.left - 5, rc.bottom - rc.top - 6, SWP_HIDEWINDOW);
+        SetWindowPos(hTabPage3, 0, rc.left + 1, rc.top + 3, rc.right - rc.left - 5, rc.bottom - rc.top - 6, SWP_HIDEWINDOW);
+        SetWindowPos(hTabPage4, 0, rc.left + 1, rc.top + 3, rc.right - rc.left - 5, rc.bottom - rc.top - 6, SWP_HIDEWINDOW);
+    }
     onTabIndexChanged();
 
     checkCtrl = GetDlgItem(hDlg, IDC_CHECK_SWITCH_KEY_CTRL);
@@ -200,6 +215,14 @@ void MainControlDialog::initDialog() {
 
     /*------------end tab 3----------------*/
 
+    //skin: kiểu nút + icon glyph (Segoe MDL2 Assets, tự bỏ qua nếu hệ điều hành không có font này)
+    Theme::setButtonKind(GetDlgItem(hDlg, IDBUTTON_OK), Theme::ButtonKind::Primary);
+    Theme::setButtonKind(GetDlgItem(hDlg, ID_BTN_DEFAULT), Theme::ButtonKind::Secondary, L"\uE777");
+    Theme::setButtonKind(GetDlgItem(hDlg, IDBUTTON_EXIT), Theme::ButtonKind::Danger, L"\uE7E8");
+    Theme::setButtonKind(GetDlgItem(hTabPage2, IDC_BUTTON_MACRO_TABLE), Theme::ButtonKind::Secondary, L"\uE70F");
+    Theme::setButtonKind(GetDlgItem(hTabPage3, IDC_BUTTON_CHECK_UPDATE), Theme::ButtonKind::Secondary, L"\uE895");
+    Theme::setButtonKind(GetDlgItem(hTabPage4, IDC_BUTTON_GO_SOURCE_CODE), Theme::ButtonKind::Secondary, L"\uE943");
+
     SendDlgItemMessage(hDlg, IDBUTTON_OK, BM_SETIMAGE, IMAGE_ICON, (LPARAM)LoadIcon(hIns, MAKEINTRESOURCEW(IDI_ICON_OK_BUTTON)));
     SendDlgItemMessage(hDlg, ID_BTN_DEFAULT, BM_SETIMAGE, IMAGE_ICON, (LPARAM)LoadIcon(hIns, MAKEINTRESOURCEW(IDI_ICON_DEFAULT_BUTTON)));
     SendDlgItemMessage(hDlg, IDBUTTON_EXIT, BM_SETIMAGE, IMAGE_ICON, (LPARAM)LoadIcon(hIns, MAKEINTRESOURCEW(IDI_ICON_EXIT_BUTTON)));
@@ -212,6 +235,12 @@ INT_PTR MainControlDialog::eventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
         this->hDlg = hDlg;
         initDialog();
         return TRUE;
+    case WM_DRAWITEM:
+        if (wParam == IDC_HEADER_BANNER) {
+            drawHeader((LPDRAWITEMSTRUCT)lParam);
+            return TRUE;
+        }
+        break;
     case WM_COMMAND: {
         int wmId = LOWORD(wParam);
         switch (wmId) {
@@ -291,9 +320,16 @@ INT_PTR MainControlDialog::tabPageEventProc(HWND hDlg, UINT uMsg, WPARAM wParam,
 #else
         SetWindowLong(hDlg, GWL_USERDATA, lParam);
 #endif
+        Theme::markPage(hDlg); //nền trắng (card)
         return TRUE;
     }
-    else if (uMsg == WM_ERASEBKGND) {
+
+    INT_PTR themed = 0;
+    if (Theme::handleMessage(hDlg, uMsg, wParam, lParam, themed)) {
+        return themed;
+    }
+
+    if (uMsg == WM_ERASEBKGND) {
         return TRUE;
     }
     else if ((uMsg == WM_CTLCOLORSTATIC || uMsg == WM_CTLCOLORBTN) && IsThemeActive()) {
@@ -375,6 +411,20 @@ void MainControlDialog::fillData() {
     wchar_t buffer[256];
     wsprintfW(buffer, _T("Phiên bản %s cho Windows - Ngày cập nhật: %s"), OpenKeyHelper::getVersionString().c_str(), _T(__DATE__));
     SendDlgItemMessage(hTabPage4, IDC_STATIC_APP_VERSION_INFO, WM_SETTEXT, 0, LPARAM(buffer));
+
+    //cập nhật "pill" trạng thái Việt/Anh trên header
+    HWND hHeader = GetDlgItem(hDlg, IDC_HEADER_BANNER);
+    if (hHeader)
+        InvalidateRect(hHeader, NULL, FALSE);
+}
+
+void MainControlDialog::drawHeader(LPDRAWITEMSTRUCT dis) {
+    const int iconSize = Theme::dpi(24);
+    HICON icon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_APP_ICON), IMAGE_ICON, iconSize, iconSize, LR_SHARED);
+    wstring subtitle = wstring(_T("Bộ gõ Tiếng Việt  ·  v")) + OpenKeyHelper::getVersionString();
+    HFONT font = (HFONT)SendMessage(dis->hwndItem, WM_GETFONT, 0, 0);
+    Theme::paintHeader(dis->hDC, dis->rcItem, icon, _T("OpenKey"), subtitle.c_str(),
+        vLanguage ? _T("Tiếng Việt") : _T("Tiếng Anh"), vLanguage != 0, font);
 }
 
 void MainControlDialog::setSwitchKey(const unsigned short& code) {
@@ -562,6 +612,10 @@ void MainControlDialog::onCheckboxClicked(const HWND& hWnd) {
         APP_SET_DATA(vFixChromiumBrowser, val ? 1 : 0);
     }
     SystemTrayHelper::updateData();
+
+    HWND hHeader = GetDlgItem(hDlg, IDC_HEADER_BANNER);
+    if (hHeader)
+        InvalidateRect(hHeader, NULL, FALSE);
 }
 
 void MainControlDialog::onCharacter(const HWND& hWnd, const UINT16& keyCode) {

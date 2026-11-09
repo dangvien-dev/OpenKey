@@ -14,6 +14,7 @@ redistribute your new version, it MUST be open source.
 #include "stdafx.h"
 #include "AboutDialog.h"
 #include "AppDelegate.h"
+#include "Theme.h"
 
 AboutDialog::AboutDialog(const HINSTANCE & hInstance, const int & resourceId)
 	: BaseDialog(hInstance, resourceId) {
@@ -67,20 +68,25 @@ void AboutDialog::initDialog() {
 	SET_DIALOG_ICON(IDI_APP_ICON);
 	
 	hUpdateButton = GetDlgItem(hDlg, IDC_BUTTON_CHECK_VERSION);
+	Theme::setButtonKind(hUpdateButton, Theme::ButtonKind::Secondary, L"\uE895");
 
-	HFONT hFont = CreateFont(48, 0, 0, 0, FW_THIN, FALSE, FALSE, FALSE,
+	HFONT hFont = CreateFont(40, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
 		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, 
 		DEFAULT_PITCH | FF_SWISS | FF_MODERN, _T("Segoe UI"));
 	SendDlgItemMessage(hDlg, IDC_STATIC_APP_TITLE, WM_SETFONT, WPARAM(hFont), TRUE);
+	Theme::setLabelRole(GetDlgItem(hDlg, IDC_STATIC_APP_TITLE), Theme::LabelRole::Title);
 
 	wchar_t buffer[256];
 	wsprintfW(buffer, _T("Phiên bản %s cho Windows - Ngày cập nhật: %s"), OpenKeyHelper::getVersionString().c_str(), _T(__DATE__));
 	SendDlgItemMessage(hDlg, IDC_STATIC_APP_VERSION, WM_SETTEXT, 0, LPARAM(buffer));
 
-	hFont = CreateFont(20, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE,
-		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-		DEFAULT_PITCH | FF_SWISS | FF_MODERN, _T("Arial"));
+	hFont = CreateFont(17, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE,
+		DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+		DEFAULT_PITCH | FF_SWISS | FF_MODERN, _T("Segoe UI"));
 	SendDlgItemMessage(hDlg, IDC_STATIC_APP_SUB_TITLE, WM_SETFONT, WPARAM(hFont), TRUE);
+	Theme::setLabelRole(GetDlgItem(hDlg, IDC_STATIC_APP_SUB_TITLE), Theme::LabelRole::Muted);
+	Theme::setLabelRole(GetDlgItem(hDlg, IDC_STATIC_APP_VERSION), Theme::LabelRole::Muted);
+	Theme::setLabelRole(GetDlgItem(hDlg, IDC_STATIC_APP_SUB_TITLE5), Theme::LabelRole::Muted);
 }
 
 void AboutDialog::onUpdateButton() {

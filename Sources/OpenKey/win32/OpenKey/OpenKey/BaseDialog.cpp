@@ -12,6 +12,7 @@ You can fork, modify, improve this program. If you
 redistribute your new version, it MUST be open source.
 -----------------------------------------------------------*/
 #include "BaseDialog.h"
+#include "Theme.h"
 static TCHAR tooltipBuff[1024];
 
 static INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -22,7 +23,9 @@ static INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM l
 		SetWindowLong(hDlg, GWL_USERDATA, lParam);
 #endif
 		BaseDialog*b = (BaseDialog*)lParam;
-		return b->eventProc(hDlg, uMsg, wParam, lParam);
+		INT_PTR ret = b->eventProc(hDlg, uMsg, wParam, lParam);
+		Theme::apply(hDlg); //skin: sau khi dialog đã tạo xong control và nạp dữ liệu
+		return ret;
 	}
 #ifdef _WIN64
 	LONG_PTR attr = GetWindowLongPtr(hDlg, GWLP_USERDATA);
@@ -30,6 +33,9 @@ static INT_PTR CALLBACK DialogProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM l
 	long attr = GetWindowLong(hDlg, GWL_USERDATA);
 #endif
 	if (attr != 0) {
+		INT_PTR themed = 0;
+		if (Theme::handleMessage(hDlg, uMsg, wParam, lParam, themed))
+			return themed;
 		return ((BaseDialog*)attr)->eventProc(hDlg, uMsg, wParam, lParam);
 	}
 	return FALSE;
