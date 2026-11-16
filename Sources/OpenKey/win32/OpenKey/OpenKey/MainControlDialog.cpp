@@ -14,6 +14,7 @@ redistribute your new version, it MUST be open source.
 #include "MainControlDialog.h"
 #include "AppDelegate.h"
 #include "Theme.h"
+#include "../RepoConfig.h"
 #include <Shlobj.h>
 #include <Uxtheme.h>
 
@@ -263,7 +264,7 @@ INT_PTR MainControlDialog::eventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
             onUpdateButton();
             break;
         case IDC_BUTTON_GO_SOURCE_CODE:
-            ShellExecute(NULL, _T("open"), _T("https://github.com/tuyenvm/OpenKey"), NULL, NULL, SW_SHOWNORMAL);
+            ShellExecute(NULL, _T("open"), OPENKEY_REPO_URL, NULL, NULL, SW_SHOWNORMAL);
             break;
         default:
             if (HIWORD(wParam) == CBN_SELCHANGE) {

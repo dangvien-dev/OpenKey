@@ -85,6 +85,12 @@ Giao diện Windows được vẽ lại theo phong cách "êm mắt, tinh gọn"
 - **Bố cục**: toạ độ trong `OpenKey.rc` tính theo dialog units của font `Segoe UI 9`. Nhãn bị chật chỗ sẽ được `Theme` tự nới rộng lúc chạy (`fitLabel`).
 - Cần link thêm `gdiplus.lib`, `comctl32.lib`, `UxTheme.lib` (đã khai báo bằng `#pragma comment(lib, ...)`).
 
+## Cập nhật tự động và repo
+Bản Windows kiểm tra và tải bản mới từ **repo khai báo trong `OpenKey/RepoConfig.h`** (hằng `OPENKEY_REPO`, dùng chung cho `OpenKey` và `OpenKeyUpdate`). Đổi repo chỉ cần sửa dòng này.
+- Repo phải là **Public**: cập nhật đọc `raw.githubusercontent.com/.../version.json` và `github.com/.../releases/download/...` mà không có token.
+- Phát hành bản mới: tạo release có tag = tên phiên bản (ví dụ `2.0.6`) và đính kèm `OpenKey2.0.6-Windows.zip` (`OpenKey64.exe` nằm ở gốc file zip); sửa `latestWinVersion` trong `version.json` ở nhánh `master` (`versionCode = major | minor << 8 | build << 16`, ví dụ 2.0.6 → `393218`).
+- Cập nhật tự động chỉ thay `OpenKey64.exe`.
+
 ## Giấy phép
 OpenKey for Windows được phát hành dưới giấy phép GPL, điều này nghĩa là bạn hoàn toàn có thể tự do tải mã nguồn về chỉnh sửa, cải tiến theo mục đích của bạn. Nếu bạn tái phân phối bản cải tiến của bạn, bạn **phải** công bố mã nguồn và credit OpenKey bản gốc.
 

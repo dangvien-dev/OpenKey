@@ -14,6 +14,7 @@ redistribute your new version, it MUST be open source.
 
 #include "framework.h"
 #include "OpenKeyUpdate.h"
+#include "../RepoConfig.h"
 #include <Urlmon.h>
 #include <fstream>
 #include <sstream>
@@ -142,7 +143,7 @@ DWORD WINAPI UpdateThreadFunction(LPVOID lpParam) {
 		FailAndExit();
 	}
 	wstring path = wstring(currentDir) + L"\\_OpenKey.tempf";
-	HRESULT res = URLDownloadToFile(NULL, L"https://raw.githubusercontent.com/tuyenvm/OpenKey/master/version.json", path.c_str(), 0, NULL);
+	HRESULT res = URLDownloadToFile(NULL, OPENKEY_VERSION_JSON_URL, path.c_str(), 0, NULL);
 
 	wstring data;
 	if (res == S_OK) {
@@ -169,7 +170,7 @@ DWORD WINAPI UpdateThreadFunction(LPVOID lpParam) {
 	if (!IsSafeVersionName(versionName)) FailAndExit();
 
 	//download zip file
-	wstring updateUrl = L"https://github.com/tuyenvm/OpenKey/releases/download/" + versionName +
+	wstring updateUrl = OPENKEY_RELEASE_DOWNLOAD_URL + versionName +
 		L"/OpenKey" + versionName + L"-Windows.zip";
 	wstring zipPath = wstring(currentDir) + L"\\_OpenKeyUpdate.zip";
 	res = URLDownloadToFile(NULL, updateUrl.c_str(), zipPath.c_str(), 0, NULL);

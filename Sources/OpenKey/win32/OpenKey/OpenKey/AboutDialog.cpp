@@ -15,6 +15,7 @@ redistribute your new version, it MUST be open source.
 #include "AboutDialog.h"
 #include "AppDelegate.h"
 #include "Theme.h"
+#include "../RepoConfig.h"
 
 AboutDialog::AboutDialog(const HINSTANCE & hInstance, const int & resourceId)
 	: BaseDialog(hInstance, resourceId) {
@@ -51,9 +52,9 @@ INT_PTR AboutDialog::eventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 		case NM_RETURN: {
 			PNMLINK link = (PNMLINK)lParam;
 			if (link->hdr.idFrom == IDC_SYSLINK_HOME_PAGE)
-				ShellExecute(NULL, _T("open"), _T("https://github.com/tuyenvm/OpenKey"), NULL, NULL, SW_SHOWNORMAL);
+				ShellExecute(NULL, _T("open"), OPENKEY_REPO_URL, NULL, NULL, SW_SHOWNORMAL);
 			else if (link->hdr.idFrom == IDC_SYSLINK_NEW_VERSION)
-				ShellExecute(NULL, _T("open"), _T("https://github.com/tuyenvm/OpenKey/releases"), NULL, NULL, SW_SHOWNORMAL);
+				ShellExecute(NULL, _T("open"), OPENKEY_RELEASES_URL, NULL, NULL, SW_SHOWNORMAL);
 			else if (link->hdr.idFrom == IDC_SYSLINK_FANPAGE)
 				ShellExecute(NULL, _T("open"), _T("https://www.facebook.com/OpenKeyVN"), NULL, NULL, SW_SHOWNORMAL);
 		}
@@ -79,6 +80,10 @@ void AboutDialog::initDialog() {
 	wchar_t buffer[256];
 	wsprintfW(buffer, _T("Phiên bản %s cho Windows - Ngày cập nhật: %s"), OpenKeyHelper::getVersionString().c_str(), _T(__DATE__));
 	SendDlgItemMessage(hDlg, IDC_STATIC_APP_VERSION, WM_SETTEXT, 0, LPARAM(buffer));
+
+	//địa chỉ repo lấy từ RepoConfig.h để không phải sửa .rc khi đổi repo
+	SetDlgItemTextW(hDlg, IDC_SYSLINK_HOME_PAGE, L"<a>" OPENKEY_REPO_URL L"</a>");
+	SetDlgItemTextW(hDlg, IDC_SYSLINK_NEW_VERSION, L"<a>" OPENKEY_RELEASES_URL L"</a>");
 
 	hFont = CreateFont(17, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE,
 		DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,

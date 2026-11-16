@@ -13,6 +13,7 @@ redistribute your new version, it MUST be open source.
 -----------------------------------------------------------*/
 #include "OpenKeyManager.h"
 #include <shlobj.h>
+#include "../RepoConfig.h"
 
 static vector<LPCTSTR> _inputType = {
 	_T("Telex"),
@@ -52,7 +53,7 @@ void OpenKeyManager::freeEngine() {
 }
 
 bool OpenKeyManager::checkUpdate(string& newVersion) {
-	wstring dataW = OpenKeyHelper::getContentOfUrl(L"https://raw.githubusercontent.com/tuyenvm/OpenKey/master/version.json");
+	wstring dataW = OpenKeyHelper::getContentOfUrl(OPENKEY_VERSION_JSON_URL);
 	string data = wideStringToUtf8(dataW);
 
 	//simple parse

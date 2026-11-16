@@ -96,10 +96,10 @@ BEGIN
     LTEXT           "Bộ gõ Tiếng Việt nguồn mở đa nền tảng",IDC_STATIC_APP_SUB_TITLE,45,41,238,11
     LTEXT           "Phien ban",IDC_STATIC_APP_VERSION,45,54,238,10
     LTEXT           "Trang chủ:",IDC_STATIC_APP_SUB_TITLE2,45,80,58,9
-    CONTROL         "<a>https://github.com/tuyenvm/OpenKey</a>",IDC_SYSLINK_HOME_PAGE,
+    CONTROL         "<a>GitHub</a>",IDC_SYSLINK_HOME_PAGE,
                     "SysLink",WS_TABSTOP,108,80,180,10
     LTEXT           "Phiên bản mới:",IDC_STATIC_APP_SUB_TITLE3,45,93,60,9
-    CONTROL         "<a>https://github.com/tuyenvm/OpenKey/releases</a>",IDC_SYSLINK_NEW_VERSION,
+    CONTROL         "<a>Releases</a>",IDC_SYSLINK_NEW_VERSION,
                     "SysLink",WS_TABSTOP,108,93,180,10
     LTEXT           "Fanpage:",IDC_STATIC_APP_SUB_TITLE4,45,106,58,9
     CONTROL         "<a>https://www.facebook.com/OpenKeyVN</a>",IDC_SYSLINK_FANPAGE,
