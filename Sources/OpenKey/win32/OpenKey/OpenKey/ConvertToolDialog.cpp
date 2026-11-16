@@ -247,7 +247,7 @@ void ConvertToolDialog::onConvertButton() {
 		if (!convertToolDontAlertWhenCompleted) {
 			TCHAR msg[256];
 			LoadString(hInstance, IDS_STRING_CONVERT_COMPLETED, msg, 256);
-			MessageBox(this->hDlg, msg, _T("OpenKey"), MB_OK);
+			MessageBox(this->hDlg, msg, _T("TechVKey"), MB_OK);
 		}
 	}
 }

@@ -100,13 +100,13 @@ void AboutDialog::onUpdateButton() {
 	if (OpenKeyManager::checkUpdate(newVersion)) {
 		WCHAR msg[256];
 		wsprintf(msg, 
-			TEXT("OpenKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
+			TEXT("TechVKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
 			utf8ToWideString(newVersion).c_str());
 
 		int msgboxID = MessageBox(
 			hDlg,
 			msg,
-			_T("OpenKey Update"),
+			_T("TechVKey Update"),
 			MB_ICONEXCLAMATION | MB_YESNO
 		);
 		if (msgboxID == IDYES) {
@@ -114,13 +114,13 @@ void AboutDialog::onUpdateButton() {
 			if (OpenKeyHelper::launchUpdater()) {
 				AppDelegate::getInstance()->onOpenKeyExit();
 			} else {
-				MessageBox(hDlg, _T("Không mở được OpenKeyUpdate.exe, hãy kiểm tra file này có nằm cùng thư mục với OpenKey không."),
-					_T("OpenKey Update"), MB_ICONERROR | MB_OK);
+				MessageBox(hDlg, _T("Không mở được OpenKeyUpdate.exe, hãy kiểm tra file này có nằm cùng thư mục với TechVKey không."),
+					_T("TechVKey Update"), MB_ICONERROR | MB_OK);
 			}
 		}
 		
 	} else {
-		MessageBox(hDlg, _T("Bạn đang dùng phiên bản mới nhất!"), _T("OpenKey Update"), MB_OK);
+		MessageBox(hDlg, _T("Bạn đang dùng phiên bản mới nhất!"), _T("TechVKey Update"), MB_OK);
 	}
 	EnableWindow(hUpdateButton, true);
 }

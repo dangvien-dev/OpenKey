@@ -92,7 +92,7 @@ static void SetWorkingDirectoryToExeFolder() {
 }
 
 static void FailAndExit() {
-	MessageBox(hDlg, _T("Có lỗi trong quá trình cập nhật, vui lòng thử lại sau!"), _T("OpenKey Update"), MB_OK);
+	MessageBox(hDlg, _T("Có lỗi trong quá trình cập nhật, vui lòng thử lại sau!"), _T("TechVKey Update"), MB_OK);
 	ExitProcess(0);
 }
 
@@ -202,7 +202,7 @@ DWORD WINAPI UpdateThreadFunction(LPVOID lpParam) {
 		FailAndExit();
 	}
 
-	MessageBox(hDlg, _T("Bạn đã cập nhật OpenKey bản mới nhất thành công!"), _T("OpenKey Update"), MB_OK);
+	MessageBox(hDlg, _T("Bạn đã cập nhật TechVKey bản mới nhất thành công!"), _T("TechVKey Update"), MB_OK);
 	ExitProcess(0);
 	return 0;
 }
