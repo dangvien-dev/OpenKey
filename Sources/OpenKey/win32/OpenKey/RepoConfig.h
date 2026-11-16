@@ -30,7 +30,7 @@ redistribute your new version, it MUST be open source.
  *  - Sửa version.json ở nhánh master: "latestWinVersion" gồm versionName và versionCode
  *    (versionCode = major | minor << 8 | build << 16, ví dụ 2.0.6 -> 393218).
  */
-#define OPENKEY_REPO                  L"vienkendo/TechVKey"
+#define OPENKEY_REPO                  L"dangvien-dev/TechVKey"
 
 #define OPENKEY_REPO_URL              L"https://github.com/" OPENKEY_REPO
 #define OPENKEY_RELEASES_URL          OPENKEY_REPO_URL L"/releases"
