@@ -68,18 +68,17 @@ Trải qua nhiều lần cập nhật và phát triển, ngày 31/07/2019, OpenK
 ## Mã nguồn
 - Mã nguồn cho Windows được build thành công với Microsoft Visual Studio 2017.
 ## Giao diện (Theme)
-Giao diện Windows được vẽ lại theo phong cách TechMaster Pro (nền sáng `#F1F5F9`, card trắng bo góc, header tối `#0F172A`, nút chính `#2563EB`, font Segoe UI, icon Segoe MDL2 Assets). Toàn bộ nằm trong `OpenKey/OpenKey/Theme.h` + `Theme.cpp`; các control vẫn là control gốc của Windows nên **không đổi hành vi** (`BM_GETCHECK`, `BN_CLICKED`, `TCN_SELCHANGE`... giữ nguyên).
+Giao diện Windows được vẽ lại theo phong cách "êm mắt, tinh gọn" cho phần mềm dùng nhiều giờ liền, cùng tinh thần trang Settings của Windows 11: nền xám nhạt `#F3F3F3`, card trắng viền mảnh, chữ `#1A1A1A`, một màu nhấn xanh dịu `#0F6CBD`, bo góc nhỏ, thanh tiêu đề chuẩn của Windows, font Segoe UI, icon Segoe MDL2 Assets. Toàn bộ nằm trong `OpenKey/OpenKey/Theme.h` + `Theme.cpp`; các control vẫn là control gốc của Windows nên **không đổi hành vi** (`BM_GETCHECK`, `BN_CLICKED`, `TCN_SELCHANGE`... giữ nguyên).
 
 | Thành phần | Cách vẽ |
 |---|---|
 | Nền dialog / label | `WM_CTLCOLORDLG`, `WM_CTLCOLORSTATIC`, `WM_ERASEBKGND` |
 | Nút bấm, checkbox, radio | `NM_CUSTOMDRAW` + GDI+ (khử răng cưa), double-buffer |
-| Group box | window subclass, vẽ thành card (tiêu đề semibold, màu `kPrimary`) |
-| Tab control | window subclass: tab gạch chân + thân tab là card; các trang tab nằm trong card |
-| Header OpenKey + "pill" Việt/Anh | `SS_OWNERDRAW` static (`IDC_HEADER_BANNER`), vẽ bằng `Theme::paintHeader` |
-| Thanh tiêu đề cửa sổ | `DwmSetWindowAttribute` (chỉ có tác dụng trên Windows 11) |
+| Group box | window subclass, vẽ thành card (tiêu đề semibold, màu `kTextPrimary`) |
+| Tab control | window subclass: tab gạch chân 2px màu nhấn + thân tab là card; các trang tab nằm trong card |
+| Thanh tiêu đề cửa sổ | giữ nguyên thanh tiêu đề chuẩn của Windows (không tùy biến màu) |
 
-- **Đổi màu / kích thước**: sửa các hằng `k...` trong `Theme.h` (token màu, tên theo `Colors.xaml` của TechMaster Pro) và `kTabHeaderPx`, `kCardRadiusPx`... trong `Theme.cpp`.
+- **Đổi màu / kích thước**: sửa các hằng `k...` trong `Theme.h` (token màu) và `kTabHeaderPx`, `kCardRadiusPx`... trong `Theme.cpp`.
 - **Kiểu nút**: `Theme::setButtonKind(hwnd, Primary | Secondary | Danger, glyph)`; **màu chữ phụ**: `Theme::setLabelRole(hwnd, Title | Muted)`. Dialog mới kế thừa `BaseDialog` sẽ được áp theme tự động.
 - **Tự tắt**: khi tắt visual styles hoặc bật Windows High Contrast, `Theme::isEnabled()` trả `false` và giao diện quay về kiểu Windows mặc định.
 - **Icon glyph**: dùng font `Segoe MDL2 Assets` (Windows 10+). Máy không có font này sẽ chỉ hiện chữ.

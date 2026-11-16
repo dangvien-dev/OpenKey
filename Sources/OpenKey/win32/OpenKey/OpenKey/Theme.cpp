@@ -33,10 +33,10 @@ const wchar_t* const kPropCard  = L"OKTheme.Card";   // control nằm trên card
 const wchar_t* const kPropPage  = L"OKTheme.Page";   // dialog là trang của tab (nền trắng)
 
 /* ---------- Kích thước @96dpi ---------- */
-const int kTabHeaderPx   = 34;
+const int kTabHeaderPx   = 32;
 const int kTabInsetPx    = 8;
-const int kCardRadiusPx  = 8;
-const int kButtonRadiusPx = 6;
+const int kCardRadiusPx  = 6;
+const int kButtonRadiusPx = 4;
 const int kCheckBoxPx    = 16;
 const int kCheckGapPx    = 8;
 const int kCheckPadLeftPx = 2;
@@ -134,17 +134,6 @@ HFONT semiboldOf(HFONT base) {
 	lf.lfQuality = CLEARTYPE_QUALITY;
 	HFONT f = cachedFont(lf);
 	return f ? f : base;
-}
-
-// Font Segoe UI cỡ `points` (pt), weight tùy chọn.
-HFONT uiFont(int points, bool semibold) {
-	LOGFONTW lf = { 0 };
-	lf.lfHeight = -MulDiv(points, g_dpi, 72);
-	lf.lfWeight = FW_NORMAL;
-	lf.lfCharSet = DEFAULT_CHARSET;
-	lf.lfQuality = CLEARTYPE_QUALITY;
-	lstrcpynW(lf.lfFaceName, semibold ? L"Segoe UI Semibold" : L"Segoe UI", LF_FACESIZE);
-	return cachedFont(lf);
 }
 
 HFONT iconFont(int heightPx) {
@@ -329,11 +318,11 @@ void drawPushButton(NMCUSTOMDRAW* nm) {
 		textColor = RGB(0xFF, 0xFF, 0xFF);
 	} else if (kind == ButtonKind::Danger) {
 		fill = pressed ? kDangerSoftPressed : (hot ? kDangerSoft : kCard);
-		border = kDanger;
+		border = (hot || pressed) ? kDanger : kBorderInput;
 		textColor = kDangerText;
 	} else {
-		fill = pressed ? kBorder : (hot ? RGB(0xF8, 0xFA, 0xFC) : kCard);
-		border = (hot || isDefault) ? kAccent : kBorderInput;
+		fill = pressed ? kBorder : (hot ? RGB(0xF5, 0xF5, 0xF5) : kCard);
+		border = isDefault ? kAccent : kBorderInput;
 		textColor = kTextPrimary;
 	}
 
@@ -420,7 +409,7 @@ void drawCheckOrRadio(NMCUSTOMDRAW* nm, bool radio) {
 						disabled ? kBorderInput : kAccent, CLR_NONE, 0.0f);
 		}
 	} else {
-		drawRound(dc, bx, by, s, s, (float)px(4), boxFill, boxBorder, 1.0f);
+		drawRound(dc, bx, by, s, s, (float)px(3), boxFill, boxBorder, 1.0f);
 		if (checked)
 			drawTick(dc, bx, by, s, RGB(0xFF, 0xFF, 0xFF), (float)px(2));
 		else if (indeterminate)
@@ -484,7 +473,7 @@ void paintCard(HWND h, HDC target) {
 	if (text[0]) {
 		RECT tr = { px(12), px(8), w - px(12), px(8) + px(20) };
 		drawText(dc, text, tr, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_END_ELLIPSIS,
-				 kPrimary, semiboldOf(controlFont(h)));
+				 kTextPrimary, semiboldOf(controlFont(h)));
 	}
 	mem.flush(0, 0);
 }
@@ -559,11 +548,11 @@ void paintTab(HWND h, HDC target, const TabState* state) {
 					  (float)(headerH - px(5) - px(6)), (float)px(6), kBorder, CLR_NONE, 0.0f);
 
 		drawText(dc, text, cell, DT_CENTER | DT_VCENTER | DT_SINGLELINE,
-				 isSel ? kAccent : (isHot ? kTextPrimary : kTextMuted), isSel ? bold : font);
+				 (isSel || isHot) ? kTextPrimary : kTextMuted, isSel ? bold : font);
 
 		if (isSel) {
 			// thanh gạch chân đè lên viền trên của card
-			float bh = (float)px(3);
+			float bh = (float)px(2);
 			drawRound(dc, (float)(cell.left + px(12)), (float)headerH - bh, (float)(rcW(cell) - px(24)), bh,
 					  bh / 2.0f, kAccent, CLR_NONE, 0.0f);
 			if (focus)
@@ -624,29 +613,6 @@ LRESULT CALLBACK tabSubclassProc(HWND h, UINT msg, WPARAM wp, LPARAM lp, UINT_PT
 }
 
 /* ---------- Áp dụng cho dialog ---------- */
-void applyTitleBar(HWND h) {
-	typedef HRESULT (WINAPI *DwmSetWindowAttributeFn)(HWND, DWORD, LPCVOID, DWORD);
-	static DwmSetWindowAttributeFn fn = NULL;
-	static bool resolved = false;
-	if (!resolved) {
-		resolved = true;
-		wchar_t path[MAX_PATH];
-		UINT n = GetSystemDirectoryW(path, MAX_PATH);
-		if (n > 0 && n < MAX_PATH - 16) {
-			lstrcatW(path, L"\\dwmapi.dll");
-			HMODULE m = LoadLibraryW(path);
-			if (m)
-				fn = (DwmSetWindowAttributeFn)GetProcAddress(m, "DwmSetWindowAttribute");
-		}
-	}
-	if (!fn)
-		return;
-	// Chỉ có tác dụng trên Windows 11 (build 22000+); các bản cũ bỏ qua lỗi và giữ thanh tiêu đề mặc định.
-	COLORREF caption = kSidebar, text = kTextOnDark;
-	fn(h, 35 /*DWMWA_CAPTION_COLOR*/, &caption, sizeof(caption));
-	fn(h, 36 /*DWMWA_TEXT_COLOR*/, &text, sizeof(text));
-}
-
 struct Child {
 	HWND h;
 	RECT r; // tọa độ client của parent
@@ -793,7 +759,6 @@ void apply(HWND hDlg) {
 	if (!isEnabled())
 		return;
 	ensureInit();
-	applyTitleBar(hDlg);
 	prepareChildren(hDlg, false);
 }
 
@@ -873,77 +838,6 @@ RECT tabPageRect(HWND hTab, HWND hParent) {
 	return rc;
 }
 
-void paintHeader(HDC hdc, const RECT& rc, HICON icon, const wchar_t* title,
-				 const wchar_t* subtitle, const wchar_t* status, bool statusOn, HFONT baseFont) {
-	int w = rcW(rc), hh = rcH(rc);
-	if (w <= 0 || hh <= 0)
-		return;
-
-	if (!isEnabled()) {
-		// Fallback: màu hệ thống (High Contrast / không có visual styles)
-		FillRect(hdc, &rc, GetSysColorBrush(COLOR_BTNFACE));
-		RECT tr = { rc.left + 8, rc.top, rc.right - 8, rc.bottom };
-		SetBkMode(hdc, TRANSPARENT);
-		SetTextColor(hdc, GetSysColor(COLOR_BTNTEXT));
-		HFONT old = (HFONT)SelectObject(hdc, baseFont ? baseFont : (HFONT)GetStockObject(DEFAULT_GUI_FONT));
-		wchar_t line[256];
-		wsprintfW(line, L"%s   %s", title, status);
-		DrawTextW(hdc, line, -1, &tr, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
-		SelectObject(hdc, old);
-		return;
-	}
-
-	ensureInit();
-	MemDC mem(hdc, w, hh);
-	HDC dc = mem.dc();
-	RECT local = { 0, 0, w, hh };
-	fillRect(dc, local, kSidebar);
-	RECT line = { 0, hh - 1, w, hh };
-	fillRect(dc, line, RGB(0x1E, 0x29, 0x3B));
-
-	int margin = px(14);
-	int x = margin;
-
-	int iconSize = px(24);
-	if (icon) {
-		DrawIconEx(dc, x, (hh - iconSize) / 2, icon, iconSize, iconSize, 0, NULL, DI_NORMAL);
-		x += iconSize + px(10);
-	}
-
-	HFONT titleFont = uiFont(12, true);
-	HFONT subFont = baseFont ? baseFont : uiFont(9, false);
-	int tw = textWidth(dc, titleFont, title);
-	RECT tr = { x, 0, x + tw + px(2), hh - 1 };
-	drawText(dc, title, tr, DT_LEFT | DT_VCENTER | DT_SINGLELINE, kTextOnDark, titleFont);
-	x += tw + px(10);
-
-	// pill trạng thái ở bên phải
-	int pillH = px(22);
-	int pillTextW = textWidth(dc, subFont, status);
-	int dot = px(8);
-	int pillW = px(10) + dot + px(6) + pillTextW + px(12);
-	int pillX = w - margin - pillW;
-	int pillY = (hh - 1 - pillH) / 2;
-
-	if (subtitle && subtitle[0]) {
-		int maxSubW = pillX - px(10) - x;
-		if (maxSubW > px(20)) {
-			RECT sr = { x, 0, x + maxSubW, hh - 1 };
-			drawText(dc, subtitle, sr, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS,
-					 kTextOnDarkMuted, subFont);
-		}
-	}
-
-	drawRound(dc, (float)pillX, (float)pillY, (float)pillW, (float)pillH, pillH / 2.0f,
-			  RGB(0x1E, 0x29, 0x3B), CLR_NONE, 0.0f);
-	drawEllipse(dc, (float)(pillX + px(10)), pillY + (pillH - dot) / 2.0f, (float)dot, (float)dot,
-				statusOn ? kSuccess : kTextOnDarkMuted, CLR_NONE, 0.0f);
-	RECT pr = { pillX + px(10) + dot + px(6), pillY, pillX + pillW - px(8), pillY + pillH };
-	drawText(dc, status, pr, DT_LEFT | DT_VCENTER | DT_SINGLELINE, kTextOnDark, subFont);
-
-	mem.flush(rc.left, rc.top);
-}
-
 bool handleMessage(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp, INT_PTR& result) {
 	switch (msg) {
 	case WM_THEMECHANGED:
@@ -985,7 +879,7 @@ bool handleMessage(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp, INT_PTR& result) {
 		LabelRole role = (LabelRole)(INT_PTR)GetPropW(c, kPropRole);
 		COLORREF color = kTextPrimary;
 		if (role == LabelRole::Title)
-			color = kPrimary;
+			color = kTextPrimary;
 		else if (role == LabelRole::Muted)
 			color = card ? kTextSecondary : kTextMuted;
 		if (disabled)

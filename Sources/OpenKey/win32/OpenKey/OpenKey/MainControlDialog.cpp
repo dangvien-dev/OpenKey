@@ -235,12 +235,6 @@ INT_PTR MainControlDialog::eventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
         this->hDlg = hDlg;
         initDialog();
         return TRUE;
-    case WM_DRAWITEM:
-        if (wParam == IDC_HEADER_BANNER) {
-            drawHeader((LPDRAWITEMSTRUCT)lParam);
-            return TRUE;
-        }
-        break;
     case WM_COMMAND: {
         int wmId = LOWORD(wParam);
         switch (wmId) {
@@ -411,20 +405,6 @@ void MainControlDialog::fillData() {
     wchar_t buffer[256];
     wsprintfW(buffer, _T("Phiên bản %s cho Windows - Ngày cập nhật: %s"), OpenKeyHelper::getVersionString().c_str(), _T(__DATE__));
     SendDlgItemMessage(hTabPage4, IDC_STATIC_APP_VERSION_INFO, WM_SETTEXT, 0, LPARAM(buffer));
-
-    //cập nhật "pill" trạng thái Việt/Anh trên header
-    HWND hHeader = GetDlgItem(hDlg, IDC_HEADER_BANNER);
-    if (hHeader)
-        InvalidateRect(hHeader, NULL, FALSE);
-}
-
-void MainControlDialog::drawHeader(LPDRAWITEMSTRUCT dis) {
-    const int iconSize = Theme::dpi(24);
-    HICON icon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_APP_ICON), IMAGE_ICON, iconSize, iconSize, LR_SHARED);
-    wstring subtitle = wstring(_T("Bộ gõ Tiếng Việt  ·  v")) + OpenKeyHelper::getVersionString();
-    HFONT font = (HFONT)SendMessage(dis->hwndItem, WM_GETFONT, 0, 0);
-    Theme::paintHeader(dis->hDC, dis->rcItem, icon, _T("OpenKey"), subtitle.c_str(),
-        vLanguage ? _T("Tiếng Việt") : _T("Tiếng Anh"), vLanguage != 0, font);
 }
 
 void MainControlDialog::setSwitchKey(const unsigned short& code) {
@@ -612,10 +592,6 @@ void MainControlDialog::onCheckboxClicked(const HWND& hWnd) {
         APP_SET_DATA(vFixChromiumBrowser, val ? 1 : 0);
     }
     SystemTrayHelper::updateData();
-
-    HWND hHeader = GetDlgItem(hDlg, IDC_HEADER_BANNER);
-    if (hHeader)
-        InvalidateRect(hHeader, NULL, FALSE);
 }
 
 void MainControlDialog::onCharacter(const HWND& hWnd, const UINT16& keyCode) {
