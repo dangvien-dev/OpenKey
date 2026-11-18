@@ -4,8 +4,9 @@
   python tools/icons/build_icons.py --out thu_muc    # ghi ra thư mục khác để xem thử trước
   python tools/icons/build_icons.py --check DIR      # chỉ kiểm tra các .ico trong DIR (không cần skia)
 
-Mỗi kích thước được VẼ TRỰC TIẾP (cỡ 16-64 vẽ lớn gấp 4 rồi thu nhỏ cho mép mịn), không thu nhỏ từ bản 256:
-cỡ nhỏ có viền và nét cyan dày hơn, khe chữ E nới ra để chữ còn đọc được ở khay hệ thống (xem OPTS).
+Mỗi kích thước được VẼ TRỰC TIẾP (cỡ 16-64 vẽ lớn gấp 4 rồi thu nhỏ cho mép mịn), không thu nhỏ từ bản 256.
+Mọi cỡ giữ NÉT MẢNH như bản lớn (viền và nét cyan không làm đậm thêm: làm đậm ở khay hệ thống trông bè và lem);
+chỉ nới khe chữ E ở cỡ nhỏ để chữ còn đọc được (xem OPTS).
 """
 import argparse
 import io
@@ -22,19 +23,19 @@ NAMES = ['icon', 'StatusViet', 'StatusEng', 'StatusViet10', 'StatusEng10']
 SIZES = [256, 128, 64, 48, 40, 32, 24, 20, 16]
 
 # Thông số theo kích thước (đơn vị thiết kế = pixel ảnh gốc x 3):
-#   w: bề dày viền xanh của chữ trắng      rim: bề dày viền cyan của chữ xanh đậm
-#   g_sw / g_glyph: nở nét cyan / chữ V của keycap       slot: nới khe chữ E       pad: lề quanh biểu tượng
-#   detail: vẽ các đường sáng/tối mảnh (chỉ có nghĩa ở cỡ lớn)
+#   w: bề dày viền xanh của chữ trắng      rim: bề dày viền cyan của chữ xanh đậm      pad: lề quanh biểu tượng
+#   slot: nới khe chữ E (cỡ nhỏ khe chỉ còn dưới 1 pixel)      detail: vẽ các đường sáng/tối mảnh (chỉ có nghĩa ở cỡ lớn)
+#   g_sw / g_glyph: nở nét cyan / chữ V của keycap. Hiện để 0 ở mọi cỡ: từng thử làm đậm cỡ khay nhưng trông bè, đã bỏ.
 OPTS = {
     256: dict(w=28, rim=15, g_sw=0, g_glyph=0, pad=0.035, detail=True),
     128: dict(w=28, rim=15, g_sw=0, g_glyph=0, pad=0.035, detail=True),
     64:  dict(w=32, rim=18, g_sw=0, g_glyph=0, pad=0.03, detail=True),
-    48:  dict(w=38, rim=24, g_sw=4, g_glyph=0, pad=0.025, detail=False),
-    40:  dict(w=44, rim=28, g_sw=8, g_glyph=6, pad=0.02, detail=False),
-    32:  dict(w=50, rim=34, g_sw=12, g_glyph=10, pad=0.015, detail=False, slot=6),
-    24:  dict(w=58, rim=40, g_sw=16, g_glyph=16, pad=0.012, detail=False, slot=14),
-    20:  dict(w=64, rim=44, g_sw=18, g_glyph=20, pad=0.01, detail=False, slot=18),
-    16:  dict(w=68, rim=48, g_sw=22, g_glyph=24, pad=0.01, detail=False, slot=22),
+    48:  dict(w=32, rim=18, g_sw=0, g_glyph=0, pad=0.025, detail=False),
+    40:  dict(w=32, rim=18, g_sw=0, g_glyph=0, pad=0.02, detail=False),
+    32:  dict(w=30, rim=17, g_sw=0, g_glyph=0, pad=0.015, detail=False, slot=4),
+    24:  dict(w=30, rim=17, g_sw=0, g_glyph=0, pad=0.012, detail=False, slot=8),
+    20:  dict(w=30, rim=17, g_sw=0, g_glyph=0, pad=0.01, detail=False, slot=10),
+    16:  dict(w=30, rim=17, g_sw=0, g_glyph=0, pad=0.01, detail=False, slot=14),
 }
 SUPERSAMPLE_UP_TO = 64
 

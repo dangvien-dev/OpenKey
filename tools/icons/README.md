@@ -39,8 +39,10 @@ Nên xem ảnh xem thử trên nền trắng, nền đen và cỡ khay trước 
 | Độ dày nét ở từng kích thước | `OPTS` trong `build_icons.py` |
 
 Toạ độ thiết kế là pixel của `approved_design_source.png` nhân 3 (keycap: ảnh cắt vùng phím rồi phóng 3 lần).
-Các cỡ nhỏ 16-24px được chỉnh riêng (viền và nét cyan dày hơn, khe chữ E nới ra) vì ở cỡ khay hệ thống chữ chỉ cao
-vài pixel; cỡ lớn giữ nguyên hình mẫu.
+Mọi cỡ giữ **nét mảnh** như bản lớn. Đã thử làm đậm viền và nét cyan ở cỡ khay (16-24px) nhưng trông bè và lem nên
+bỏ; cỡ nhỏ chỉ chỉnh riêng khe chữ E (nới ra, vì ở 16px khe chỉ còn dưới 1 pixel) và lề quanh biểu tượng.
+`status_icons.render` còn hai tuỳ chọn thử nghiệm chưa dùng: `swoosh='none'|'flat'` (bỏ nét cyan / nét cyan đặc) và
+`bright=True` (thân chữ xanh sáng hơn).
 
 ## Phạm vi
 
