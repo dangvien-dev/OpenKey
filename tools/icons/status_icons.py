@@ -37,15 +37,19 @@ E_BLUE = dict(
 )
 
 
-def _bounds(spec):
-    xs = [p[0] for p in spec['letter'] + spec['sw_outer']]
-    ys = [p[1] for p in spec['letter'] + spec['sw_outer']]
+def _bounds(spec, with_swoosh=True):
+    pts = spec['letter'] + (spec['sw_outer'] if with_swoosh else [])
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
     return min(xs), min(ys), max(xs), max(ys)
 
 
 def _paint_swoosh(canvas, spec, crescent, lower, edge, opts):
     lx, ly = spec['sw_outer'][0]
     rx, ry = spec['sw_outer'][-1]
+    if opts.get('swoosh') == 'flat':                                   # cỡ khay: một mảng cyan đặc, không dải xanh/đường sáng
+        d.fill(canvas, crescent, shader=d.gradient((lx, ly), (rx, ry), [(0, '#35dcfc'), (1, '#3fe6ff')]))
+        return
     d.fill(canvas, crescent, shader=d.gradient((lx, ly), (rx, ry), [(0, '#38e7fe'), (0.35, '#5cf9ff'), (0.75, '#2fe0fb'), (1, '#16bff0')]))
     d.fill(canvas, lower, shader=d.gradient((lx, ly), (rx + 60, ry + 160), [(0, '#10a4f8'), (0.5, '#0988f2'), (1, '#0762d6')]))
     if opts.get('detail', True):                                      # đường sáng mảnh dọc mép trong (chỉ ở cỡ lớn)
@@ -66,9 +70,14 @@ def _paint_white(canvas, letter, bb, opts):
 
 def _paint_blue(canvas, letter, bb, opts):
     _, y0, _, y1 = bb
-    d.fill(canvas, letter, shader=d.gradient((0, y0), (0, y1), [(0, '#48eeff'), (0.3, '#20b4fa'), (1, '#0673df')]))      # viền cyan
-    body = d.inset(letter, opts.get('rim', 15))
-    d.fill(canvas, body, shader=d.gradient((0, y0), (0, y1), [(0, '#0a72f0'), (0.5, '#0356d2'), (1, '#0138a2')]))        # thân xanh đậm
+    if opts.get('bright'):                  # cỡ khay: thân sáng hơn để không chìm vào taskbar tối, viền cyan nổi rõ
+        rim = [(0, '#7af4ff'), (0.5, '#3cd0fb'), (1, '#27b4f6')]
+        body = [(0, '#2f8ff8'), (0.5, '#1d73ea'), (1, '#1260d6')]
+    else:
+        rim = [(0, '#48eeff'), (0.3, '#20b4fa'), (1, '#0673df')]
+        body = [(0, '#0a72f0'), (0.5, '#0356d2'), (1, '#0138a2')]
+    d.fill(canvas, letter, shader=d.gradient((0, y0), (0, y1), rim))                                                    # viền cyan
+    d.fill(canvas, d.inset(letter, opts.get('rim', 15)), shader=d.gradient((0, y0), (0, y1), body))                      # thân xanh
 
 
 ICONS = {
@@ -83,7 +92,8 @@ def render(name, size, opts):
     """Vẽ icon `name` thành ảnh RGBA size x size. `opts`: xem OPTS trong build_icons.py."""
     spec, paint_letter = ICONS[name]
     surface, canvas = d.new_canvas(size)
-    bb = _bounds(spec)
+    show_swoosh = opts.get('swoosh') != 'none'
+    bb = _bounds(spec, show_swoosh)                 # không có nét cyan thì chữ chiếm trọn khung
     d.fit(canvas, size, bb, opts['pad'])
 
     pts = spec['letter']
@@ -94,6 +104,7 @@ def render(name, size, opts):
     crescent, lower, edge = d.swoosh_shapes(spec['sw_outer'], spec['sw_inner'])
     crescent, lower = d.grown(crescent, opts.get('g_sw', 0)), d.grown(lower, opts.get('g_sw', 0))
 
-    _paint_swoosh(canvas, spec, crescent, lower, edge, opts)      # nét cyan nằm SAU chữ
+    if show_swoosh:
+        _paint_swoosh(canvas, spec, crescent, lower, edge, opts)  # nét cyan nằm SAU chữ
     paint_letter(canvas, letter, bb, opts)
     return d.snapshot(surface)
