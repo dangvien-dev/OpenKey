@@ -14,6 +14,7 @@ redistribute your new version, it MUST be open source.
 #include "MainControlDialog.h"
 #include "AppDelegate.h"
 #include "Theme.h"
+#include "../RepoConfig.h"
 #include <Shlobj.h>
 #include <Uxtheme.h>
 
@@ -235,12 +236,6 @@ INT_PTR MainControlDialog::eventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
         this->hDlg = hDlg;
         initDialog();
         return TRUE;
-    case WM_DRAWITEM:
-        if (wParam == IDC_HEADER_BANNER) {
-            drawHeader((LPDRAWITEMSTRUCT)lParam);
-            return TRUE;
-        }
-        break;
     case WM_COMMAND: {
         int wmId = LOWORD(wParam);
         switch (wmId) {
@@ -269,7 +264,7 @@ INT_PTR MainControlDialog::eventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
             onUpdateButton();
             break;
         case IDC_BUTTON_GO_SOURCE_CODE:
-            ShellExecute(NULL, _T("open"), _T("https://github.com/tuyenvm/OpenKey"), NULL, NULL, SW_SHOWNORMAL);
+            ShellExecute(NULL, _T("open"), OPENKEY_REPO_URL, NULL, NULL, SW_SHOWNORMAL);
             break;
         default:
             if (HIWORD(wParam) == CBN_SELCHANGE) {
@@ -411,20 +406,6 @@ void MainControlDialog::fillData() {
     wchar_t buffer[256];
     wsprintfW(buffer, _T("Phiên bản %s cho Windows - Ngày cập nhật: %s"), OpenKeyHelper::getVersionString().c_str(), _T(__DATE__));
     SendDlgItemMessage(hTabPage4, IDC_STATIC_APP_VERSION_INFO, WM_SETTEXT, 0, LPARAM(buffer));
-
-    //cập nhật "pill" trạng thái Việt/Anh trên header
-    HWND hHeader = GetDlgItem(hDlg, IDC_HEADER_BANNER);
-    if (hHeader)
-        InvalidateRect(hHeader, NULL, FALSE);
-}
-
-void MainControlDialog::drawHeader(LPDRAWITEMSTRUCT dis) {
-    const int iconSize = Theme::dpi(24);
-    HICON icon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_APP_ICON), IMAGE_ICON, iconSize, iconSize, LR_SHARED);
-    wstring subtitle = wstring(_T("Bộ gõ Tiếng Việt  ·  v")) + OpenKeyHelper::getVersionString();
-    HFONT font = (HFONT)SendMessage(dis->hwndItem, WM_GETFONT, 0, 0);
-    Theme::paintHeader(dis->hDC, dis->rcItem, icon, _T("OpenKey"), subtitle.c_str(),
-        vLanguage ? _T("Tiếng Việt") : _T("Tiếng Anh"), vLanguage != 0, font);
 }
 
 void MainControlDialog::setSwitchKey(const unsigned short& code) {
@@ -612,10 +593,6 @@ void MainControlDialog::onCheckboxClicked(const HWND& hWnd) {
         APP_SET_DATA(vFixChromiumBrowser, val ? 1 : 0);
     }
     SystemTrayHelper::updateData();
-
-    HWND hHeader = GetDlgItem(hDlg, IDC_HEADER_BANNER);
-    if (hHeader)
-        InvalidateRect(hHeader, NULL, FALSE);
 }
 
 void MainControlDialog::onCharacter(const HWND& hWnd, const UINT16& keyCode) {
@@ -660,13 +637,13 @@ void MainControlDialog::onUpdateButton() {
     if (OpenKeyManager::checkUpdate(newVersion)) {
         WCHAR msg[256];
         wsprintf(msg,
-            TEXT("OpenKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
+            TEXT("TechVKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
             utf8ToWideString(newVersion).c_str());
 
         int msgboxID = MessageBox(
             hDlg,
             msg,
-            _T("OpenKey Update"),
+            _T("TechVKey Update"),
             MB_ICONEXCLAMATION | MB_YESNO
         );
         if (msgboxID == IDYES) {
@@ -674,14 +651,14 @@ void MainControlDialog::onUpdateButton() {
             if (OpenKeyHelper::launchUpdater()) {
                 AppDelegate::getInstance()->onOpenKeyExit();
             } else {
-                MessageBox(hDlg, _T("Không mở được OpenKeyUpdate.exe, hãy kiểm tra file này có nằm cùng thư mục với OpenKey không."),
-                    _T("OpenKey Update"), MB_ICONERROR | MB_OK);
+                MessageBox(hDlg, _T("Không mở được OpenKeyUpdate.exe, hãy kiểm tra file này có nằm cùng thư mục với TechVKey không."),
+                    _T("TechVKey Update"), MB_ICONERROR | MB_OK);
             }
         }
 
     }
     else {
-        MessageBox(hDlg, _T("Bạn đang dùng phiên bản mới nhất!"), _T("OpenKey Update"), MB_OK);
+        MessageBox(hDlg, _T("Bạn đang dùng phiên bản mới nhất!"), _T("TechVKey Update"), MB_OK);
     }
     EnableWindow(hUpdateButton, true);
 }
@@ -691,7 +668,7 @@ void MainControlDialog::requestRestartAsAdmin() {
     if (vRunAsAdmin && !IsUserAnAdmin()) {
         int msgboxID = MessageBox(
             hDlg,
-            _T("Bạn cần phải khởi động lại OpenKey để kích hoạt chế độ Admin!\nBạn có muốn khởi động lại OpenKey không?"),
+            _T("Bạn cần phải khởi động lại TechVKey để kích hoạt chế độ Admin!\nBạn có muốn khởi động lại TechVKey không?"),
             _T("OpenKey"),
             MB_ICONEXCLAMATION | MB_YESNO
         );

@@ -13,6 +13,7 @@ redistribute your new version, it MUST be open source.
 -----------------------------------------------------------*/
 #include "OpenKeyManager.h"
 #include <shlobj.h>
+#include "../RepoConfig.h"
 
 static vector<LPCTSTR> _inputType = {
 	_T("Telex"),
@@ -52,7 +53,7 @@ void OpenKeyManager::freeEngine() {
 }
 
 bool OpenKeyManager::checkUpdate(string& newVersion) {
-	wstring dataW = OpenKeyHelper::getContentOfUrl(L"https://raw.githubusercontent.com/tuyenvm/OpenKey/master/version.json");
+	wstring dataW = OpenKeyHelper::getContentOfUrl(OPENKEY_VERSION_JSON_URL);
 	string data = wideStringToUtf8(dataW);
 
 	//simple parse
@@ -127,7 +128,7 @@ void OpenKeyManager::createDesktopShortcut() {
 	if (SUCCEEDED(hres)) {
 		wstring path = OpenKeyHelper::getFullPath();
 		pShellLink->SetPath(path.c_str());
-		pShellLink->SetDescription(_T("OpenKey - Bộ gõ Tiếng Việt"));
+		pShellLink->SetDescription(_T("TechVKey - Bộ gõ Tiếng Việt"));
 		pShellLink->SetIconLocation(path.c_str(), 0);
 
 		IPersistFile* pPersistFile;
@@ -137,7 +138,7 @@ void OpenKeyManager::createDesktopShortcut() {
 			wchar_t desktopPath[MAX_PATH + 1];
 			wchar_t savePath[MAX_PATH + 10];
 			SHGetFolderPath(NULL, CSIDL_DESKTOP, NULL, 0, desktopPath);
-			wsprintf(savePath, _T("%s\\OpenKey.lnk"), desktopPath);
+			wsprintf(savePath, _T("%s\\TechVKey.lnk"), desktopPath);
 			hres = pPersistFile->Save(savePath, TRUE);
 			pPersistFile->Release();
 			pShellLink->Release();

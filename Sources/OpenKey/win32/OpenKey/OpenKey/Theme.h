@@ -17,9 +17,10 @@ redistribute your new version, it MUST be open source.
 /*
  * Theme - owner-draw skin cho các dialog Win32 của OpenKey.
  *
- * Ngôn ngữ thiết kế lấy từ TechMaster Pro (Styles/Colors.xaml, HANDOFF.md mục 3):
- * nền #F1F5F9, card trắng, viền #E2E8F0, chữ #1E293B, nút chính #2563EB,
- * thanh tiêu đề/sidebar #0F172A, icon Segoe MDL2 Assets.
+ * Phong cách "êm mắt, tinh gọn" cho phần mềm dùng nhiều giờ liền (cùng tinh thần
+ * trang Settings của Windows 11 / Office): nền xám nhạt trung tính, card trắng
+ * viền mảnh, chữ gần đen, MỘT màu nhấn xanh dịu cho hành động chính, bo góc nhỏ,
+ * thanh tiêu đề chuẩn của Windows, icon Segoe MDL2 Assets.
  *
  * Nguyên tắc:
  *  - Không đổi hành vi: mọi control vẫn là control gốc của Windows
@@ -32,32 +33,26 @@ namespace Theme {
 
 /* ---------- Design tokens (COLORREF) ---------- */
 // Nền / bề mặt
-const COLORREF kSidebar       = RGB(0x0F, 0x17, 0x2A); // header band + thanh tiêu đề
-const COLORREF kBgMain        = RGB(0xF1, 0xF5, 0xF9);
+const COLORREF kBgMain        = RGB(0xF3, 0xF3, 0xF3);
 const COLORREF kCard          = RGB(0xFF, 0xFF, 0xFF);
-const COLORREF kBorder        = RGB(0xE2, 0xE8, 0xF0);
-const COLORREF kBorderInput   = RGB(0xCB, 0xD5, 0xE1);
-const COLORREF kControlBorder = RGB(0x64, 0x74, 0x8B); // viền checkbox/radio (>= 3:1 trên nền trắng)
+const COLORREF kBorder        = RGB(0xE5, 0xE5, 0xE5);
+const COLORREF kBorderInput   = RGB(0xD1, 0xD1, 0xD1);
+const COLORREF kControlBorder = RGB(0x70, 0x70, 0x70); // viền checkbox/radio (4.9:1 trên nền trắng)
 // Chữ
-const COLORREF kTextPrimary   = RGB(0x1E, 0x29, 0x3B);
-const COLORREF kTextSecondary = RGB(0x64, 0x74, 0x8B); // chỉ dùng trên nền trắng (4.76:1)
-const COLORREF kTextMuted     = RGB(0x47, 0x55, 0x69); // thay cho kTextSecondary khi nền là kBgMain
-const COLORREF kTextDisabled  = RGB(0x94, 0xA3, 0xB8);
-const COLORREF kTextOnDark    = RGB(0xF8, 0xFA, 0xFC);
-const COLORREF kTextOnDarkMuted = RGB(0x94, 0xA3, 0xB8);
-// Thương hiệu / hành động
-const COLORREF kPrimary       = RGB(0x1E, 0x3A, 0x8A); // tiêu đề, thương hiệu
-const COLORREF kAccent        = RGB(0x25, 0x63, 0xEB); // PrimaryButton
-const COLORREF kAccentHover   = RGB(0x1D, 0x4E, 0xD8);
-const COLORREF kAccentPressed = RGB(0x1E, 0x40, 0xAF);
-const COLORREF kAccentSoft    = RGB(0xEF, 0xF6, 0xFF);
-// Trạng thái
-const COLORREF kSuccess       = RGB(0x22, 0xC5, 0x5E);
-const COLORREF kWarning       = RGB(0xFA, 0xCC, 0x15);
-const COLORREF kDanger        = RGB(0xEF, 0x44, 0x44);
-const COLORREF kDangerText    = RGB(0xB9, 0x1C, 0x1C); // chữ đỏ đạt AA trên nền trắng
-const COLORREF kDangerSoft    = RGB(0xFE, 0xF2, 0xF2);
-const COLORREF kDangerSoftPressed = RGB(0xFE, 0xE2, 0xE2);
+const COLORREF kTextPrimary   = RGB(0x1A, 0x1A, 0x1A);
+const COLORREF kTextSecondary = RGB(0x61, 0x61, 0x61); // chỉ dùng trên nền trắng (6.2:1)
+const COLORREF kTextMuted     = RGB(0x5C, 0x5C, 0x5C); // thay cho kTextSecondary khi nền là kBgMain (5.6:1)
+const COLORREF kTextDisabled  = RGB(0xA6, 0xA6, 0xA6);
+// Hành động (một màu nhấn duy nhất)
+const COLORREF kAccent        = RGB(0x0F, 0x6C, 0xBD); // nút chính, checkbox/radio đã chọn, gạch chân tab (5.4:1 trên trắng)
+const COLORREF kAccentHover   = RGB(0x11, 0x5E, 0xA3);
+const COLORREF kAccentPressed = RGB(0x0F, 0x54, 0x8C);
+const COLORREF kAccentSoft    = RGB(0xEB, 0xF3, 0xFC);
+// Nguy hiểm (chỉ tô khi rê chuột; mặc định nút vẫn trung tính)
+const COLORREF kDanger        = RGB(0xC4, 0x2B, 0x1C);
+const COLORREF kDangerText    = RGB(0xC4, 0x2B, 0x1C); // 5.7:1 trên nền trắng
+const COLORREF kDangerSoft    = RGB(0xFD, 0xE7, 0xE9);
+const COLORREF kDangerSoftPressed = RGB(0xF9, 0xD2, 0xD5);
 
 enum class ButtonKind {
 	Auto = 0,   // Secondary (viền accent nếu là nút mặc định của dialog)
@@ -68,7 +63,7 @@ enum class ButtonKind {
 
 enum class LabelRole {
 	Body = 0,
-	Title,      // màu kPrimary
+	Title,      // màu kTextPrimary
 	Muted       // chữ phụ
 };
 
@@ -102,9 +97,5 @@ RECT tabPageRect(HWND hTab, HWND hParent);
 /* ---------- Vẽ owner-draw ---------- */
 // Quy đổi px @96dpi sang px theo DPI hệ thống (app khai báo dpiAware).
 int dpi(int px96);
-
-// Header band phía trên cùng cửa sổ chính: icon + tên app + mô tả + "pill" trạng thái.
-void paintHeader(HDC hdc, const RECT& rc, HICON icon, const wchar_t* title,
-				 const wchar_t* subtitle, const wchar_t* status, bool statusOn, HFONT baseFont);
 
 }

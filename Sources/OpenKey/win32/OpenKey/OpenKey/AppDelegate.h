@@ -18,6 +18,9 @@ redistribute your new version, it MUST be open source.
 #include "ConvertToolDialog.h"
 #include "MacroDialog.h"
 
+//luồng nền báo cho cửa sổ ẩn (luồng chính) biết có bản mới; lParam là std::string* tên phiên bản (nơi nhận giải phóng)
+#define WM_APP_UPDATE_AVAILABLE (WM_USER + 2020)
+
 class BaseDialog;
 class AppDelegate {
 private:
@@ -51,4 +54,5 @@ public: //event
 	void onControlPanel();
 	void onOpenKeyAbout();
 	void onOpenKeyExit();
+	void onUpdateAvailable(std::string* newVersion);
 };

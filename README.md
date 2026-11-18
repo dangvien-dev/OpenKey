@@ -1,3 +1,5 @@
+> **TechVKey** là bản phát triển riêng từ [OpenKey](https://github.com/tuyenvm/OpenKey) 2.0.5 của Mai Vũ Tuyên, phát hành theo giấy phép GPLv3 (xem `LICENSE`). Bản này đã được chỉnh sửa từ 11/2026: sửa lỗi kẹt phím Shift/Ctrl/Alt, giao diện Windows mới, cập nhật từ repo riêng. Nội dung bên dưới là tài liệu gốc của OpenKey.
+
 
 # [OpenKey](http://open-key.org)
 ### [Download bản mới nhất](https://github.com/tuyenvm/OpenKey/releases)

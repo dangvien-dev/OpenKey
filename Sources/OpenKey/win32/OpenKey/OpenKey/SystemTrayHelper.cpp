@@ -69,7 +69,7 @@ map<UINT, LPCTSTR> menuData = {
 	{POPUP_QUICK_CONVERT, _T("Chuyển mã nhanh")},
 	{POPUP_MACRO_TABLE, _T("Cấu hình gõ tắt...")},
 	{POPUP_CONTROL_PANEL, _T("Bảng điều khiển...")},
-	{POPUP_ABOUT_OPENKEY, _T("Giới thiệu OpenKey")},
+	{POPUP_ABOUT_OPENKEY, _T("Giới thiệu TechVKey")},
 	{POPUP_OPENKEY_EXIT, _T("Thoát")},
 };
 
@@ -82,6 +82,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_USER+2019:
 		AppDelegate::getInstance()->onControlPanel();
+		break;
+	case WM_APP_UPDATE_AVAILABLE:
+		AppDelegate::getInstance()->onUpdateAvailable((std::string*)lParam);
 		break;
 	case WM_TRAYMESSAGE: {
 		if (lParam == WM_LBUTTONDBLCLK) {
