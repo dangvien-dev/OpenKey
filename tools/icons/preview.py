@@ -8,7 +8,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_DIR = HERE.parents[1] / 'Sources/OpenKey/win32/OpenKey/OpenKey'
+DEFAULT_DIR = HERE / 'out'
 NAMES = ['icon', 'StatusViet', 'StatusEng', 'StatusViet10', 'StatusEng10']
 TRAY_SIZES = [16, 20, 24, 32]
 LIGHT_TASKBAR, DARK_TASKBAR = (243, 243, 243), (32, 32, 32)

@@ -1,9 +1,12 @@
-# Bộ icon TechVKey (vẽ bằng vector)
+# Công cụ vẽ bộ icon thay thế (vector)
 
-Tạo 5 tệp `.ico` của bản Windows: `icon.ico` (keycap V), `StatusViet.ico`, `StatusEng.ico` (chữ trắng viền xanh),
-`StatusViet10.ico`, `StatusEng10.ico` (chữ xanh đậm viền cyan). Các tệp `.ico` **đã được commit** trong
-`Sources/OpenKey/win32/OpenKey/OpenKey/`; dựng ứng dụng (MSBuild) **không cần** Python hay thư mục này.
-Chỉ chạy khi muốn chỉnh icon.
+> **Hiện chưa dùng.** Icon đang chạy trong `Sources/OpenKey/win32/OpenKey/OpenKey/` là **bộ gốc của tác giả OpenKey (2019)**.
+> Bộ do công cụ này tạo (kiểu ChatGPT: chữ V/E nghiêng nét dày kèm nét cyan, keycap) đã được thử ở bản 2.0.8 rồi gỡ vì
+> người dùng muốn quay lại icon gốc. Công cụ vẫn giữ lại để có thể tạo lại hoặc chỉnh. Mặc định nó ghi ra `tools/icons/out`
+> (bị git bỏ qua) chứ **không** ghi đè icon của project; muốn thay icon thì chép tay các tệp `.ico` cần dùng.
+
+Tạo 5 tệp `.ico`: `icon.ico` (keycap V), `StatusViet.ico`, `StatusEng.ico` (chữ trắng viền xanh),
+`StatusViet10.ico`, `StatusEng10.ico` (chữ xanh đậm viền cyan). Dựng ứng dụng (MSBuild) **không cần** Python hay thư mục này.
 
 ## Vì sao vẽ bằng vector
 
@@ -17,9 +20,9 @@ màu là gradient lấy mẫu từ ảnh gốc. Không còn pixel nào từ ản
 ```bash
 pip install -r tools/icons/requirements.txt
 
-python tools/icons/build_icons.py                   # ghi đè 5 .ico trong thư mục icon của project Windows
-python tools/icons/build_icons.py --out thu_muc     # hoặc ghi ra thư mục khác để xem thử trước
-python tools/icons/preview.py thu_muc xem_thu       # ảnh xem thử: nền trắng/đen + cỡ khay trên taskbar sáng/tối
+python tools/icons/build_icons.py                   # ghi ra tools/icons/out
+python tools/icons/build_icons.py --out thu_muc     # hoặc ghi ra thư mục khác
+python tools/icons/preview.py [thu_muc] xem_thu     # ảnh xem thử: nền trắng/đen + cỡ khay trên taskbar sáng/tối
 python tools/icons/build_icons.py --check thu_muc   # chỉ kiểm tra .ico (không cần skia)
 ```
 

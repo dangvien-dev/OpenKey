@@ -1,7 +1,7 @@
 """Dựng 5 file .ico của TechVKey từ bản vector (không dùng ảnh raster nào làm nguồn).
 
-  python tools/icons/build_icons.py                  # ghi thẳng vào Sources/OpenKey/win32/OpenKey/OpenKey
-  python tools/icons/build_icons.py --out thu_muc    # ghi ra thư mục khác để xem thử trước
+  python tools/icons/build_icons.py                  # ghi ra tools/icons/out (không đụng icon đang dùng của project)
+  python tools/icons/build_icons.py --out thu_muc    # ghi ra thư mục khác
   python tools/icons/build_icons.py --check DIR      # chỉ kiểm tra các .ico trong DIR (không cần skia)
 
 Mỗi kích thước được VẼ TRỰC TIẾP (cỡ 16-64 vẽ lớn gấp 4 rồi thu nhỏ cho mép mịn), không thu nhỏ từ bản 256.
@@ -18,7 +18,7 @@ import numpy as np
 from PIL import Image, ImageOps
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_OUT = HERE.parents[1] / 'Sources/OpenKey/win32/OpenKey/OpenKey'
+DEFAULT_OUT = HERE / 'out'      # cố ý KHÔNG mặc định ghi vào thư mục icon của project: bộ trong đó là bộ gốc của tác giả
 NAMES = ['icon', 'StatusViet', 'StatusEng', 'StatusViet10', 'StatusEng10']
 SIZES = [256, 128, 64, 48, 40, 32, 24, 20, 16]
 
@@ -159,7 +159,7 @@ def check(directory):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--out', type=Path, default=DEFAULT_OUT, help='thư mục ghi .ico (mặc định: thư mục icon của project Windows)')
+    ap.add_argument('--out', type=Path, default=DEFAULT_OUT, help='thư mục ghi .ico (mặc định: tools/icons/out)')
     ap.add_argument('--check', type=Path, metavar='DIR', help='chỉ kiểm tra các .ico trong DIR')
     args = ap.parse_args()
     if args.check is None:

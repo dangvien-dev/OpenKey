@@ -62,6 +62,8 @@
 #define IDD_DIALOG_TAB_SYSTEM           147
 #define IDD_DIALOG_OLD                  148
 #define IDD_DIALOG_TAB_INFO             149
+#define IDI_ICON_STATUS_VIET_10_DARK    150
+#define IDI_ICON_STATUS_ENG_10_DARK     151
 #define IDS_STRING_OTHER_LANGUAGES		150
 #define IDC_COMBO1                      1000
 #define IDC_COMBO_INPUT_TYPE            1000
@@ -192,7 +194,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        149
+#define _APS_NEXT_RESOURCE_VALUE        152
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1072
 #define _APS_NEXT_SYMED_VALUE           110
