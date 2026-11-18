@@ -308,6 +308,7 @@ void drawRound(HDC dc, float x, float y, float w, float h, float r,
 			   COLORREF fill, COLORREF stroke, float strokeW) {
 	Gdiplus::Graphics g(dc);
 	g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf); // tâm pixel ở nửa số nguyên: nét 1px đặt tại x.5 mới nằm gọn 1 hàng
 	float inset = (stroke != CLR_NONE) ? strokeW / 2.0f : 0.0f;
 	float rr = r - inset;
 	if (rr < 0.0f) rr = 0.0f;
@@ -326,6 +327,7 @@ void drawRound(HDC dc, float x, float y, float w, float h, float r,
 void drawEllipse(HDC dc, float x, float y, float w, float h, COLORREF fill, COLORREF stroke, float strokeW) {
 	Gdiplus::Graphics g(dc);
 	g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf); // tâm pixel ở nửa số nguyên: nét 1px đặt tại x.5 mới nằm gọn 1 hàng
 	float inset = (stroke != CLR_NONE) ? strokeW / 2.0f : 0.0f;
 	if (fill != CLR_NONE) {
 		Gdiplus::SolidBrush b(gcol(fill));
@@ -340,6 +342,7 @@ void drawEllipse(HDC dc, float x, float y, float w, float h, COLORREF fill, COLO
 void drawTick(HDC dc, float x, float y, float s, COLORREF color, float penW) {
 	Gdiplus::Graphics g(dc);
 	g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf); // tâm pixel ở nửa số nguyên: nét 1px đặt tại x.5 mới nằm gọn 1 hàng
 	Gdiplus::Pen pen(gcol(color), penW);
 	pen.SetLineJoin(Gdiplus::LineJoinRound);
 	pen.SetStartCap(Gdiplus::LineCapRound);
@@ -355,6 +358,7 @@ void drawTick(HDC dc, float x, float y, float s, COLORREF color, float penW) {
 void drawDash(HDC dc, float x, float y, float s, COLORREF color, float penW) {
 	Gdiplus::Graphics g(dc);
 	g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf); // tâm pixel ở nửa số nguyên: nét 1px đặt tại x.5 mới nằm gọn 1 hàng
 	Gdiplus::Pen pen(gcol(color), penW);
 	pen.SetStartCap(Gdiplus::LineCapRound);
 	pen.SetEndCap(Gdiplus::LineCapRound);
@@ -862,6 +866,7 @@ void paintCombo(HWND h, HDC target, const InputState* st) {
 		float a = (float)px(4), b = (float)px(2);
 		Gdiplus::Graphics g(dc);
 		g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+		g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf); // tâm pixel ở nửa số nguyên: nét 1px đặt tại x.5 mới nằm gọn 1 hàng
 		Gdiplus::Pen pen(gcol(disabled ? kTextDisabled : kTextSecondary), (float)px(2) * 0.8f);
 		pen.SetStartCap(Gdiplus::LineCapRound);
 		pen.SetEndCap(Gdiplus::LineCapRound);
@@ -1630,6 +1635,18 @@ bool handleMessage(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp, INT_PTR& result) {
 		result = TRUE;
 		return true;
 	}
+
+	case WM_PAINT:
+		// Trang của tab tự vẽ nền: trước đây dùng COLOR_WINDOW (trắng) nên ở giao diện tối lộ ra khối trắng sau các ô chọn
+		if (isPage(hDlg)) {
+			PAINTSTRUCT ps;
+			HDC dc = BeginPaint(hDlg, &ps);
+			FillRect(dc, &ps.rcPaint, g_brCard);
+			EndPaint(hDlg, &ps);
+			result = TRUE;
+			return true;
+		}
+		return false;
 
 	case WM_CTLCOLORSTATIC:
 	case WM_CTLCOLORBTN: {
