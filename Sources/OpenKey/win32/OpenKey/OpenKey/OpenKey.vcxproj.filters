@@ -165,12 +165,6 @@
     <Image Include="StatusEng10.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="StatusEng10Dark.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="StatusViet10Dark.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="OKButton.ico">
       <Filter>Resource Files</Filter>
     </Image>
