@@ -42,6 +42,11 @@ IDI_ICON_STATUS_VIET_10 ICON                    "StatusViet10.ico"
 
 IDI_ICON_STATUS_ENG_10  ICON                    "StatusEng10.ico"
 
+// Biểu tượng "hiện đại" cho taskbar SÁNG: chữ đậm (StatusViet10/Eng10 là chữ trắng cho taskbar tối)
+IDI_ICON_STATUS_VIET_10_DARK ICON               "StatusViet10Dark.ico"
+
+IDI_ICON_STATUS_ENG_10_DARK ICON                "StatusEng10Dark.ico"
+
 IDI_ICON_OK_BUTTON      ICON                    "OKButton.ico"
 
 IDI_ICON_EXIT_BUTTON    ICON                    "ExitButton.ico"

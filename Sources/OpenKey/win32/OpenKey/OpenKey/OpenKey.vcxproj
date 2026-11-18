@@ -213,8 +213,10 @@
     <Image Include="StartConvert.ico" />
     <Image Include="StatusEng.ico" />
     <Image Include="StatusEng10.ico" />
+    <Image Include="StatusEng10Dark.ico" />
     <Image Include="StatusViet.ico" />
     <Image Include="StatusViet10.ico" />
+    <Image Include="StatusViet10Dark.ico" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="DeclareDPIAware.manifest">
