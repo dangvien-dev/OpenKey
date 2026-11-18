@@ -106,8 +106,7 @@ void AppDelegate::onUpdateAvailable(std::string* newVersionPtr) {
 			if (OpenKeyHelper::launchUpdater()) {
 				AppDelegate::getInstance()->onOpenKeyExit();
 			} else {
-				MessageBox(0, _T("Không mở được OpenKeyUpdate.exe, hãy kiểm tra file này có nằm cùng thư mục với TechVKey không."),
-					_T("TechVKey Update"), MB_ICONERROR | MB_OK);
+				OpenKeyHelper::showUpdaterLaunchFailed(0);
 			}
 		}
 
