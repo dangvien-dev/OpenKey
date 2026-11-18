@@ -1,37 +1,68 @@
 """4 icon trạng thái: StatusViet / StatusEng (chữ trắng viền xanh) và StatusViet10 / StatusEng10 (chữ xanh đậm viền cyan).
 
 Hình dạng đo từ approved_design_source.png. Toạ độ thiết kế = pixel của ảnh gốc nhân 3:
-  - `letter`: các đỉnh NHỌN của chữ (đi vòng quanh, theo chiều kim đồng hồ), `radii`: bán kính bo của từng đỉnh;
-  - `sw_outer` / `sw_inner`: hai đường cong của nét cyan, đi từ mũi trái sang mũi phải;
-  - `slots`: các toạ độ y biên của khe chữ E (-1: dịch lên, +1: dịch xuống) để nới khe ở cỡ nhỏ.
+  - `letter`: các đỉnh NHỌN của chữ (đi vòng quanh, theo chiều kim đồng hồ), `radii`: bán kính bo của từng đỉnh
+    (chữ do regular_v() / regular_e() dựng, xem ĐỘ ĐẬM CHỮ bên dưới);
+  - `sw_outer` / `sw_inner`: hai đường cong của nét cyan, đi từ mũi trái sang mũi phải.
 """
 import skia
 
 import draw as d
 
+# ---- ĐỘ ĐẬM CHỮ (đơn vị thiết kế; chiều cao chữ = 675 với V, 707 với E).
+# Regular ~ 15% chiều cao chữ, Bold ~ 21%, Black ~ 29% (bản đầu từ ảnh ChatGPT là Black: nét dày 200-280, trông nặng).
+# Đang dùng ~17-18% (Regular dày nhẹ): chữ trắng còn viền xanh hai bên nên nét 15% chỉ còn lõi trắng dưới 1 pixel ở cỡ khay.
+V_STEM = 150     # bề ngang một nét của V (đo ngang, ở mép trên)
+E_ARM = 125      # chiều dày ba nhánh ngang của E
+E_SPINE = 150    # bề ngang gạch đứng của E
+
+
+def regular_v():
+    """V nghiêng độ đậm Regular: hai nét chéo gặp nhau ở đáy phẳng. Trả về (đỉnh nhọn, bán kính bo)."""
+    top, bottom, left, right = 82, 757, 46, 879      # khung ngoài giữ như bản đầu
+    bl, br = 380, 500                                # đáy phẳng hẹp (hai nét gặp nhau, không còn khối đáy dày)
+    sl, sr = (bl - left) / (bottom - top), (br - right) / (bottom - top)
+    t = ((right - V_STEM) - (left + V_STEM)) / (sl - sr)     # giao điểm hai cạnh trong = đáy chữ V
+    notch = (left + V_STEM + sl * t, top + t)
+    pts = [(left, top), (left + V_STEM, top), notch, (right - V_STEM, top), (right, top), (br, bottom), (bl, bottom)]
+    return pts, [40, 22, 12, 22, 40, 35, 35]
+
+
+def regular_e():
+    """E nghiêng độ đậm Regular: gạch đứng + ba nhánh cùng dày, khe rộng. Trả về (đỉnh nhọn, bán kính bo)."""
+    top, bottom, tl, tr, slope = 96, 803, 211, 834, 0.22     # khung ngoài + độ nghiêng giữ như bản đầu
+    lean = (tl - 57) / (bottom - top)                        # độ nghiêng cạnh trái (x giảm dần xuống dưới)
+    spine = lambda y: tl + E_SPINE - lean * (y - top)        # mép trong gạch đứng tại độ cao y
+    right = lambda y, cut: tr - slope * (y - top) - cut      # mép phải nhánh (nhánh giữa ngắn hơn)
+    gap = ((bottom - top) - 3 * E_ARM) / 2                   # chiều cao mỗi khe
+    y1, y2 = top + E_ARM, top + E_ARM + gap                  # nhánh trên: [top, y1]; nhánh giữa: [y2, y2 + E_ARM]
+    y3, y4 = y2 + E_ARM, bottom - E_ARM                      # nhánh dưới: [y4, bottom]
+    pts = [(tl, top), (tr, top), (right(y1, 0), y1), (spine(y1), y1), (spine(y2), y2),
+           (right(y2, 70), y2), (right(y3, 70), y3), (spine(y3), y3), (spine(y4), y4),
+           (right(y4, 5), y4), (right(bottom, 5), bottom), (57, bottom)]
+    return pts, [40, 35, 30, 8, 8, 30, 30, 8, 8, 30, 35, 40]
+
+
+_V_LETTER = regular_v()
+_E_LETTER = regular_e()
+
 V_WHITE = dict(
-    letter=[(46, 82), (329, 82), (424, 405), (604, 82), (879, 82), (515, 757), (273, 757)],
-    radii=[80, 85, 10, 60, 65, 90, 90],
+    letter=_V_LETTER[0], radii=_V_LETTER[1],
     sw_outer=[(154, 839), (349, 842), (553, 809), (694, 752), (785, 676), (827, 607), (845, 532), (836, 451), (802, 396)],
     sw_inner=[(154, 839), (409, 774), (616, 660), (750, 535), (797, 440), (802, 396)],
 )
 E_WHITE = dict(
-    letter=[(211, 96), (834, 96), (780, 305), (436, 305), (424, 356), (716, 356), (673, 558), (376, 558), (368, 598), (729, 598), (668, 803), (57, 803)],
-    radii=[60, 60, 50, 12, 12, 45, 40, 12, 12, 30, 45, 70],
-    slots={305: -1, 356: 1, 558: -1, 598: 1}, slot_scale=1.0,
+    letter=_E_LETTER[0], radii=_E_LETTER[1],
     sw_outer=[(210, 883), (391, 881), (604, 848), (751, 791), (823, 734), (875, 652), (893, 568), (881, 505), (829, 438)],
     sw_inner=[(210, 883), (444, 817), (727, 654), (815, 540), (829, 438)],
 )
 V_BLUE = dict(
-    letter=[(57, 84), (327, 84), (424, 428), (592, 84), (877, 84), (516, 754), (287, 754)],
-    radii=[75, 80, 10, 55, 60, 90, 90],
+    letter=_V_LETTER[0], radii=_V_LETTER[1],
     sw_outer=[(166, 848), (352, 857), (562, 827), (700, 773), (803, 682), (842, 610), (854, 547), (848, 475), (814, 408)],
     sw_inner=[(166, 848), (463, 771), (613, 684), (740, 570), (807, 445), (814, 408)],
 )
 E_BLUE = dict(
-    letter=[(217, 90), (801, 90), (762, 266), (422, 266), (412, 342), (700, 342), (670, 515), (362, 515), (350, 582), (713, 582), (671, 758), (64, 758)],
-    radii=[60, 55, 40, 10, 10, 45, 40, 10, 10, 30, 45, 65],
-    slots={266: -1, 342: 1, 515: -1, 582: 1}, slot_scale=0.5,
+    letter=_E_LETTER[0], radii=_E_LETTER[1],
     sw_outer=[(195, 874), (385, 869), (568, 842), (697, 800), (784, 746), (842, 679), (878, 574), (869, 490), (817, 423)],
     sw_inner=[(195, 874), (504, 772), (715, 636), (810, 517), (817, 423)],
 )

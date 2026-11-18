@@ -33,10 +33,14 @@ Nên xem ảnh xem thử trên nền trắng, nền đen và cỡ khay trước 
 
 | Muốn đổi | Sửa ở |
 |---|---|
-| Hình chữ V/E, nét cyan | `status_icons.py`: `V_WHITE`, `E_WHITE`, `V_BLUE`, `E_BLUE` (đỉnh nhọn + bán kính bo + hai đường cong của nét) |
+| Độ đậm chữ V/E | `status_icons.py`: `V_STEM`, `E_ARM`, `E_SPINE` (chữ do `regular_v()`/`regular_e()` dựng từ các số này) |
+| Nét cyan | `status_icons.py`: `sw_outer`, `sw_inner` của `V_WHITE`, `E_WHITE`, `V_BLUE`, `E_BLUE` (hai đường cong từ mũi trái sang mũi phải) |
 | Hình keycap | `keycap_icon.py` (`BASE`, `KEY`, `PLATEAU`, `GLYPH_V`, `HAT_*`, `SW_*`) |
 | Màu | các dòng `d.gradient(..., [(vị trí, '#màu'), ...])` trong hai tệp trên |
 | Độ dày nét ở từng kích thước | `OPTS` trong `build_icons.py` |
+
+Chữ V/E dùng độ đậm **Regular dày nhẹ** (nét ~17-18% chiều cao chữ). Bản đầu cắt từ ảnh ChatGPT là dạng Black (nét ~29%) nên
+trông nặng; muốn đậm hơn/nhạt hơn chỉ cần đổi `V_STEM`, `E_ARM`, `E_SPINE`. Khung ngoài, độ nghiêng, màu và nét cyan giữ như bản duyệt.
 
 Toạ độ thiết kế là pixel của `approved_design_source.png` nhân 3 (keycap: ảnh cắt vùng phím rồi phóng 3 lần).
 Mọi cỡ giữ **nét mảnh** như bản lớn. Đã thử làm đậm viền và nét cyan ở cỡ khay (16-24px) nhưng trông bè và lem nên
