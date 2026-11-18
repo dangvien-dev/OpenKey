@@ -214,6 +214,12 @@ void MainControlDialog::initDialog() {
     checkFixChromium = GetDlgItem(hTabPage3, IDC_CHECK_FIX_CHROMIUM);
     createToolTip(checkFixChromium, IDS_STRING_FIX_CHROMIUM);
 
+    comboTheme = GetDlgItem(hTabPage3, IDC_COMBO_THEME);
+    SendMessage(comboTheme, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(_T("Theo Windows")));
+    SendMessage(comboTheme, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(_T("Sáng")));
+    SendMessage(comboTheme, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(_T("Tối")));
+    createToolTip(comboTheme, IDS_STRING_THEME);
+
     /*------------end tab 3----------------*/
 
     //skin: kiểu nút + icon glyph (Segoe MDL2 Assets, tự bỏ qua nếu hệ điều hành không có font này)
@@ -246,10 +252,10 @@ INT_PTR MainControlDialog::eventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
             AppDelegate::getInstance()->onOpenKeyExit();
             break;
         case ID_BTN_DEFAULT: {
-            int msgboxID = MessageBox(
+            int msgboxID = Theme::messageBox(
                 hDlg,
                 _T("Bạn có chắc chắn muốn thiết lập lại cài đặt gốc?"),
-                _T("OpenKey"),
+                _T("TechVKey"),
                 MB_ICONEXCLAMATION | MB_YESNO
             );
             if (msgboxID == IDYES) {
@@ -396,6 +402,7 @@ void MainControlDialog::fillData() {
     SendMessage(checkCheckNewVersion, BM_SETCHECK, vCheckNewVersion ? 1 : 0, 0);
     SendMessage(checkUseClipboard, BM_SETCHECK, vSendKeyStepByStep ? 0 : 1, 0);
     SendMessage(checkFixChromium, BM_SETCHECK, vFixChromiumBrowser ? 1 : 0, 0);
+    SendMessage(comboTheme, CB_SETCURSEL, vThemeMode, 0);
 
     EnableWindow(checkRestoreIfWrongSpelling, vCheckSpelling);
     EnableWindow(checkAllowZWJF, vCheckSpelling);
@@ -426,6 +433,11 @@ void MainControlDialog::onComboBoxSelected(const HWND& hCombobox, const int& com
             setAppInputMethodStatus(OpenKeyHelper::getFrontMostAppExecuteName(), vLanguage | (vCodeTable << 1));
             saveSmartSwitchKeyData();
         }
+    }
+    else if (hCombobox == comboTheme) {
+        APP_SET_DATA(vThemeMode, (int)SendMessage(hCombobox, CB_GETCURSEL, 0, 0));
+        Theme::setMode(vThemeMode);
+        AppDelegate::getInstance()->onThemeChanged();
     }
     SystemTrayHelper::updateData();
 }
@@ -640,11 +652,11 @@ void MainControlDialog::onUpdateButton() {
             TEXT("TechVKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
             utf8ToWideString(newVersion).c_str());
 
-        int msgboxID = MessageBox(
+        int msgboxID = Theme::messageBox(
             hDlg,
             msg,
             _T("TechVKey Update"),
-            MB_ICONEXCLAMATION | MB_YESNO
+            MB_ICONQUESTION | MB_YESNO
         );
         if (msgboxID == IDYES) {
             //Call OpenKeyUpdate
@@ -657,7 +669,7 @@ void MainControlDialog::onUpdateButton() {
 
     }
     else {
-        MessageBox(hDlg, _T("Bạn đang dùng phiên bản mới nhất!"), _T("TechVKey Update"), MB_OK);
+        Theme::messageBox(hDlg, _T("Bạn đang dùng phiên bản mới nhất!"), _T("TechVKey Update"), MB_ICONINFORMATION | MB_OK);
     }
     EnableWindow(hUpdateButton, true);
 }
@@ -665,11 +677,11 @@ void MainControlDialog::onUpdateButton() {
 void MainControlDialog::requestRestartAsAdmin() {
     OpenKeyHelper::registerRunOnStartup(false);
     if (vRunAsAdmin && !IsUserAnAdmin()) {
-        int msgboxID = MessageBox(
+        int msgboxID = Theme::messageBox(
             hDlg,
             _T("Bạn cần phải khởi động lại TechVKey để kích hoạt chế độ Admin!\nBạn có muốn khởi động lại TechVKey không?"),
-            _T("OpenKey"),
-            MB_ICONEXCLAMATION | MB_YESNO
+            _T("TechVKey"),
+            MB_ICONQUESTION | MB_YESNO
         );
         if (msgboxID == IDYES) {
             PostQuitMessage(0);

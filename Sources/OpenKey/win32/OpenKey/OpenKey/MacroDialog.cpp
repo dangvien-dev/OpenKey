@@ -172,7 +172,7 @@ void MacroDialog::onAddMacroButton() {
 	wstring content = buffer;
 
 	if (name.compare(L"") == 0 || content.compare(L"") == 0) {
-		MessageBox(hDlg, _T("Bạn hãy nhập từ cần gõ tắt!"), _T("TechVKey"), MB_OK);
+		Theme::messageBox(hDlg, _T("Bạn hãy nhập từ cần gõ tắt!"), _T("TechVKey"), MB_ICONEXCLAMATION | MB_OK);
 		return;
 	}
 
@@ -189,7 +189,7 @@ void MacroDialog::onDeleteMacroButton() {
 	wstring name = buffer;
 
 	if (name.compare(L"") == 0) {
-		MessageBox(hDlg, _T("Bạn hãy chọn từ cần xoá!"), _T("TechVKey"), MB_OK);
+		Theme::messageBox(hDlg, _T("Bạn hãy chọn từ cần xoá!"), _T("TechVKey"), MB_ICONEXCLAMATION | MB_OK);
 		return;
 	}
 
@@ -218,11 +218,11 @@ void MacroDialog::onImportMacroButton() {
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
 
 	if (GetOpenFileName(&ofn) == TRUE) {
-		int msgboxID = MessageBox(
+		int msgboxID = Theme::messageBox(
 			hDlg,
 			_T("Bạn có muốn giữ lại dữ liệu hiện tại không?"),
 			_T("Dữ liệu gõ tắt"),
-			MB_ICONEXCLAMATION | MB_YESNO
+			MB_ICONQUESTION | MB_YESNO
 		);
 		wstring path = ofn.lpstrFile;
 		readFromFile(wideStringToUtf8(path), msgboxID == IDYES);

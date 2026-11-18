@@ -103,11 +103,11 @@ void AboutDialog::onUpdateButton() {
 			TEXT("TechVKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
 			utf8ToWideString(newVersion).c_str());
 
-		int msgboxID = MessageBox(
+		int msgboxID = Theme::messageBox(
 			hDlg,
 			msg,
 			_T("TechVKey Update"),
-			MB_ICONEXCLAMATION | MB_YESNO
+			MB_ICONQUESTION | MB_YESNO
 		);
 		if (msgboxID == IDYES) {
 			//Call OpenKeyUpdate
@@ -119,7 +119,7 @@ void AboutDialog::onUpdateButton() {
 		}
 		
 	} else {
-		MessageBox(hDlg, _T("Bạn đang dùng phiên bản mới nhất!"), _T("TechVKey Update"), MB_OK);
+		Theme::messageBox(hDlg, _T("Bạn đang dùng phiên bản mới nhất!"), _T("TechVKey Update"), MB_ICONINFORMATION | MB_OK);
 	}
 	EnableWindow(hUpdateButton, true);
 }

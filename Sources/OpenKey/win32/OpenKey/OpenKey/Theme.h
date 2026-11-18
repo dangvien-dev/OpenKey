@@ -31,28 +31,32 @@ redistribute your new version, it MUST be open source.
  */
 namespace Theme {
 
-/* ---------- Design tokens (COLORREF) ---------- */
+/* ---------- Design tokens (COLORREF) ----------
+ * Là biến (không phải hằng) vì đổi theo chế độ sáng/tối lúc chạy; giá trị đặt trong Theme.cpp (palette sáng và tối).
+ */
 // Nền / bề mặt
-const COLORREF kBgMain        = RGB(0xF3, 0xF3, 0xF3);
-const COLORREF kCard          = RGB(0xFF, 0xFF, 0xFF);
-const COLORREF kBorder        = RGB(0xE5, 0xE5, 0xE5);
-const COLORREF kBorderInput   = RGB(0xD1, 0xD1, 0xD1);
-const COLORREF kControlBorder = RGB(0x70, 0x70, 0x70); // viền checkbox/radio (4.9:1 trên nền trắng)
+extern COLORREF kBgMain;
+extern COLORREF kCard;
+extern COLORREF kBorder;
+extern COLORREF kBorderInput;
+extern COLORREF kControlBorder; // viền checkbox/radio (4.9:1 trên nền trắng)
 // Chữ
-const COLORREF kTextPrimary   = RGB(0x1A, 0x1A, 0x1A);
-const COLORREF kTextSecondary = RGB(0x61, 0x61, 0x61); // chỉ dùng trên nền trắng (6.2:1)
-const COLORREF kTextMuted     = RGB(0x5C, 0x5C, 0x5C); // thay cho kTextSecondary khi nền là kBgMain (5.6:1)
-const COLORREF kTextDisabled  = RGB(0xA6, 0xA6, 0xA6);
+extern COLORREF kTextPrimary;
+extern COLORREF kTextSecondary; // chỉ dùng trên nền trắng (6.2:1)
+extern COLORREF kTextMuted; // thay cho kTextSecondary khi nền là kBgMain (5.6:1)
+extern COLORREF kTextDisabled;
 // Hành động (một màu nhấn duy nhất)
-const COLORREF kAccent        = RGB(0x0F, 0x6C, 0xBD); // nút chính, checkbox/radio đã chọn, gạch chân tab (5.4:1 trên trắng)
-const COLORREF kAccentHover   = RGB(0x11, 0x5E, 0xA3);
-const COLORREF kAccentPressed = RGB(0x0F, 0x54, 0x8C);
-const COLORREF kAccentSoft    = RGB(0xEB, 0xF3, 0xFC);
+extern COLORREF kAccent; // nút chính, checkbox/radio đã chọn, gạch chân tab (5.4:1 trên trắng)
+extern COLORREF kAccentHover;
+extern COLORREF kAccentPressed;
+extern COLORREF kAccentSoft;
+extern COLORREF kOnAccent;     // chữ/dấu tick đặt trên nền kAccent
+extern COLORREF kHover;        // nền nút phụ khi rê chuột
 // Nguy hiểm (chỉ tô khi rê chuột; mặc định nút vẫn trung tính)
-const COLORREF kDanger        = RGB(0xC4, 0x2B, 0x1C);
-const COLORREF kDangerText    = RGB(0xC4, 0x2B, 0x1C); // 5.7:1 trên nền trắng
-const COLORREF kDangerSoft    = RGB(0xFD, 0xE7, 0xE9);
-const COLORREF kDangerSoftPressed = RGB(0xF9, 0xD2, 0xD5);
+extern COLORREF kDanger;
+extern COLORREF kDangerText; // 5.7:1 trên nền trắng
+extern COLORREF kDangerSoft;
+extern COLORREF kDangerSoftPressed;
 
 enum class ButtonKind {
 	Auto = 0,   // Secondary (viền accent nếu là nút mặc định của dialog)
@@ -82,6 +86,22 @@ void applyPage(HWND hPage);
 // Chuyển tiếp message của dialog (top-level hoặc trang tab) cho Theme.
 // Trả về true nếu Theme đã xử lý; khi đó `result` là giá trị dialog proc phải trả về.
 bool handleMessage(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam, INT_PTR& result);
+
+/* ---------- Chế độ sáng / tối ---------- */
+// 0 = theo Windows (mặc định), 1 = luôn sáng, 2 = luôn tối. Lưu ở registry do ứng dụng quản lý; Theme chỉ nhận giá trị.
+void setMode(int mode);
+int getMode();
+// true khi đang dùng bảng màu tối (đã tính cả chế độ ứng dụng của Windows khi mode = 0).
+bool isDark();
+// Tính lại bảng màu và vẽ lại toàn bộ dialog `hTop` cùng mọi control con (dùng khi người dùng đổi chế độ,
+// hoặc Windows đổi sáng/tối lúc dialog đang mở).
+void refresh(HWND hTop);
+
+/* ---------- Hộp thoại thông báo ---------- */
+// Thay cho MessageBox: cùng phong cách với giao diện (biểu tượng, nút bo góc, nền sáng/tối).
+// Hỗ trợ MB_OK, MB_OKCANCEL, MB_YESNO, MB_YESNOCANCEL, MB_RETRYCANCEL và MB_ICONINFORMATION/WARNING/ERROR/QUESTION.
+// Trả về IDOK, IDCANCEL, IDYES, IDNO hoặc IDRETRY. Khi theme tắt (High Contrast...) rơi về MessageBox của Windows.
+int messageBox(HWND parent, const wchar_t* text, const wchar_t* caption, UINT flags);
 
 /* ---------- Tùy biến từng control ---------- */
 void setButtonKind(HWND hButton, ButtonKind kind, const wchar_t* glyph = nullptr);
