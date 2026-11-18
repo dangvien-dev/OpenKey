@@ -24,11 +24,13 @@ redistribute your new version, it MUST be open source.
  * Lưu ý: cập nhật tự động đọc qua raw.githubusercontent.com và github.com/.../releases
  * mà không có token, nên repo PHẢI là Public thì cập nhật mới hoạt động.
  *
- * Quy ước phát hành bản mới (bản Windows):
- *  - Tạo release với tag = tên phiên bản (ví dụ 2.0.6) và đính kèm file OpenKey<tên phiên bản>-Windows.zip
- *    (ví dụ OpenKey2.0.6-Windows.zip), trong đó OpenKey64.exe nằm ở gốc file zip.
- *  - Sửa version.json ở nhánh master: "latestWinVersion" gồm versionName và versionCode
- *    (versionCode = major | minor << 8 | build << 16, ví dụ 2.0.6 -> 393218).
+ * Phát hành bản mới (bản Windows): GitHub > Actions > Release > Run workflow > nhập số phiên bản (ví dụ 2.0.6).
+ * Workflow .github/workflows/release.yml tự làm hết các việc sau (đừng làm tay, dễ lệch):
+ *  - ghi số phiên bản vào OpenKey.rc và version.json ("latestWinVersion"),
+ *  - build, rồi tạo release với tag = tên phiên bản (ví dụ 2.0.6, KHÔNG có chữ v) kèm file
+ *    OpenKey<tên phiên bản>-Windows.zip, trong đó OpenKey64.exe nằm ở GỐC file zip,
+ *  - cuối cùng mới đẩy version.json lên master để các máy bắt đầu thấy bản mới.
+ * versionCode = major | minor << 8 | build << 16 (ví dụ 2.0.6 -> 393218); xem .github/scripts/release_tools.py.
  */
 #define OPENKEY_REPO                  L"dangvien-dev/TechVKey"
 

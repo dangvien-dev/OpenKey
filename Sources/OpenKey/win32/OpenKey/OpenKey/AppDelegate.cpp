@@ -48,7 +48,7 @@ int vRunWithWindows = 1;
 int vSupportMetroApp = 1;
 int vCreateDesktopShortcut = 0;
 int vRunAsAdmin = 0;
-int vCheckNewVersion = 0;
+int vCheckNewVersion = 1;
 //beta feature
 int vFixChromiumBrowser = 0; //new on version 2.0
 
@@ -59,9 +59,37 @@ bool AppDelegate::isDialogMsg(MSG & msg) const {
 		(aboutDialog != NULL && IsDialogMessage(aboutDialog->getHwnd(), &msg));
 }
 
+//Tải version.json có thể mất nhiều giây khi mạng chậm. Hook bàn phím chạy trên luồng chính, nên nếu chờ
+//mạng ở đó thì mọi phím gõ trong toàn hệ thống bị treo (và Windows có thể gỡ hook). Vì vậy kiểm tra ở luồng nền
+//rồi gửi kết quả về luồng chính bằng WM_APP_UPDATE_AVAILABLE.
+static DWORD WINAPI CheckUpdateThread(LPVOID param) {
+	HWND hWnd = (HWND)param;
+	string* newVersion = new string();
+	if (OpenKeyManager::checkUpdate(*newVersion) && PostMessage(hWnd, WM_APP_UPDATE_AVAILABLE, 0, (LPARAM)newVersion)) {
+		return 0; //luồng chính nhận quyền sở hữu newVersion
+	}
+	delete newVersion;
+	return 0;
+}
+
 void AppDelegate::checkUpdate() {
-	string newVersion;
-	if (OpenKeyManager::checkUpdate(newVersion)) {
+	HWND hWnd = FindWindow(APP_CLASS, NULL); //cửa sổ ẩn của khay hệ thống (luồng chính)
+	if (!hWnd) {
+		return;
+	}
+	HANDLE thread = CreateThread(NULL, 0, CheckUpdateThread, (LPVOID)hWnd, 0, NULL);
+	if (thread) {
+		CloseHandle(thread);
+	}
+}
+
+void AppDelegate::onUpdateAvailable(std::string* newVersionPtr) {
+	if (!newVersionPtr) {
+		return;
+	}
+	string newVersion = *newVersionPtr;
+	delete newVersionPtr;
+	{
 		WCHAR msg[256];
 		wsprintf(msg,
 			TEXT("TechVKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
@@ -198,6 +226,7 @@ void AppDelegate::onDefaultConfig() {
 	APP_SET_DATA(vOtherLanguage, 1);
 	APP_SET_DATA(vTempOffOpenKey, 0);
 	APP_SET_DATA(vFixChromiumBrowser, 0);
+	APP_SET_DATA(vCheckNewVersion, 1);
 
 	if (mainDialog) {
 		mainDialog->fillData();

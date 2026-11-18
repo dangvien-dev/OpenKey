@@ -88,8 +88,10 @@ Giao diện Windows được vẽ lại theo phong cách "êm mắt, tinh gọn"
 ## Cập nhật tự động và repo
 Bản Windows kiểm tra và tải bản mới từ **repo khai báo trong `OpenKey/RepoConfig.h`** (hằng `OPENKEY_REPO`, dùng chung cho `OpenKey` và `OpenKeyUpdate`). Đổi repo chỉ cần sửa dòng này.
 - Repo phải là **Public**: cập nhật đọc `raw.githubusercontent.com/.../version.json` và `github.com/.../releases/download/...` mà không có token.
-- Phát hành bản mới: tạo release có tag = tên phiên bản (ví dụ `2.0.6`) và đính kèm `OpenKey2.0.6-Windows.zip` (`OpenKey64.exe` nằm ở gốc file zip); sửa `latestWinVersion` trong `version.json` ở nhánh `master` (`versionCode = major | minor << 8 | build << 16`, ví dụ 2.0.6 → `393218`).
-- Cập nhật tự động chỉ thay `OpenKey64.exe`.
+- **Mặc định TechVKey tự kiểm tra bản mới mỗi lần khởi động** (checkbox "Kiểm tra bản mới lúc khởi động" ở tab Hệ thống). Việc kiểm tra chạy ở luồng nền nên không làm treo bàn phím khi mạng chậm, và chỉ hỏi người dùng khi thật sự có bản mới hơn.
+- **Phát hành bản mới bằng một nút bấm:** vào GitHub > Actions > **Release** > Run workflow > nhập số phiên bản (ví dụ `2.0.6`, phải lớn hơn bản đang ghi trong `version.json`). Workflow `.github/workflows/release.yml` tự ghi số phiên bản vào `OpenKey.rc` và `version.json`, build x86 + x64, tạo release (tag = `2.0.6`, không có chữ `v`) kèm `OpenKey2.0.6-Windows.zip` (`OpenKey64.exe` nằm ở gốc file zip), rồi mới đẩy `version.json` lên `master`. Workflow chỉ chạy được từ nhánh `master`.
+- Công cụ phát hành nằm ở `.github/scripts/release_tools.py` (`versionCode = major | minor << 8 | build << 16`, ví dụ 2.0.6 → `393218`).
+- Cập nhật tự động chỉ thay `OpenKey64.exe` (không thay `OpenKeyUpdate.exe` và `OpenKey32.exe`).
 
 ## Giấy phép
 OpenKey for Windows được phát hành dưới giấy phép GPL, điều này nghĩa là bạn hoàn toàn có thể tự do tải mã nguồn về chỉnh sửa, cải tiến theo mục đích của bạn. Nếu bạn tái phân phối bản cải tiến của bạn, bạn **phải** công bố mã nguồn và credit OpenKey bản gốc.
