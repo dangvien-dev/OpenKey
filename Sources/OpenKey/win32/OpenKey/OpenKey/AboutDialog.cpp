@@ -114,8 +114,7 @@ void AboutDialog::onUpdateButton() {
 			if (OpenKeyHelper::launchUpdater()) {
 				AppDelegate::getInstance()->onOpenKeyExit();
 			} else {
-				MessageBox(hDlg, _T("Không mở được OpenKeyUpdate.exe, hãy kiểm tra file này có nằm cùng thư mục với TechVKey không."),
-					_T("TechVKey Update"), MB_ICONERROR | MB_OK);
+				OpenKeyHelper::showUpdaterLaunchFailed(hDlg);
 			}
 		}
 		

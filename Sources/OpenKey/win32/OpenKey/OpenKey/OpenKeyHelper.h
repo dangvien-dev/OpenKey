@@ -50,5 +50,7 @@ public:
 
 	//Start OpenKeyUpdate.exe that sits next to this exe. Returns false if it could not be started.
 	static bool launchUpdater();
+	//gọi khi launchUpdater() thất bại: nói rõ đường dẫn + mã lỗi và đề nghị mở trang tải bản mới
+	static void showUpdaterLaunchFailed(HWND parent);
 };
 
