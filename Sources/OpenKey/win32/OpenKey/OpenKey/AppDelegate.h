@@ -54,5 +54,6 @@ public: //event
 	void onControlPanel();
 	void onOpenKeyAbout();
 	void onOpenKeyExit();
+	void onThemeChanged();
 	void onUpdateAvailable(std::string* newVersion);
 };

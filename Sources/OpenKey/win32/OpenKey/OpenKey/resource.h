@@ -183,6 +183,8 @@
 #define IDS_STRING_END_CONSONANT        1067
 #define IDC_CHECK_OTHER_LANGUAGES       1068
 #define IDC_HEADER_BANNER               1069
+#define IDC_COMBO_THEME                 1070
+#define IDS_STRING_THEME                1071
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -192,7 +194,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        149
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1070
+#define _APS_NEXT_CONTROL_VALUE         1072
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

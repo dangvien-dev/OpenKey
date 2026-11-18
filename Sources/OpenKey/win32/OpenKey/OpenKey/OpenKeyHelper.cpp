@@ -1,4 +1,4 @@
-/*----------------------------------------------------------
+﻿/*----------------------------------------------------------
 OpenKey - The Cross platform Open source Vietnamese Keyboard application.
 
 Copyright (C) 2019 Mai Vu Tuyen
@@ -17,6 +17,7 @@ redistribute your new version, it MUST be open source.
 #include <fstream>
 #include <sstream>
 #include "../RepoConfig.h"
+#include "Theme.h"
 
 #pragma comment(lib, "version.lib")
 #pragma comment(lib, "Urlmon.lib")
@@ -434,7 +435,7 @@ void OpenKeyHelper::showUpdaterLaunchFailed(HWND parent) {
 			L"Cũng nên kiểm tra phần mềm diệt virus.";
 	}
 	msg += L"\n\nBạn có muốn mở trang tải bản mới để cập nhật thủ công không?";
-	if (MessageBoxW(parent, msg.c_str(), L"TechVKey Update", MB_ICONERROR | MB_YESNO) == IDYES) {
+	if (Theme::messageBox(parent, msg.c_str(), L"TechVKey Update", MB_ICONERROR | MB_YESNO) == IDYES) {
 		ShellExecuteW(NULL, L"open", OPENKEY_RELEASES_URL, NULL, NULL, SW_SHOWNORMAL);
 	}
 }

@@ -244,6 +244,8 @@ BEGIN
     CONTROL         "Biểu tượng hiện đại",IDC_CHECK_MODERN_ICON,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,49,132,12
     CONTROL         "Khởi động cùng Windows",IDC_CHECK_RUN_WITH_WINDOWS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,64,132,12
+    LTEXT           "Giao diện:",IDC_STATIC,6,82,40,9
+    COMBOBOX        IDC_COMBO_THEME,50,79,86,70,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     CONTROL         "Sửa lỗi trên Chromium (beta)",IDC_CHECK_FIX_CHROMIUM,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,154,4,156,12
     CONTROL         "Chạy với quyền Admin",IDC_CHECK_RUN_AS_ADMIN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,154,19,156,12
@@ -523,6 +525,7 @@ END
 
 STRINGTABLE
 BEGIN
+    IDS_STRING_THEME "Giao diện của bảng điều khiển: theo chế độ sáng/tối của Windows, hoặc luôn sáng, luôn tối. Đổi có hiệu lực ngay."
     IDS_STRING_FIX_CHROMIUM "Sửa lỗi bị đúp từ trên các trình duyệt Chromium bao gồm Google Chrome, Brave, Microsoft Edge. Tính năng này đang được thử nghiệm. Cần bật tính năng ""Sửa lỗi gợi ý"" để hỗ trợ tính năng này."
 END
 

@@ -27,23 +27,30 @@ class BumpTests(unittest.TestCase):
     def read(self, rel):
         return (self.root / rel).read_text(encoding='utf-8')
 
+    def next_patch(self):
+        """Phiên bản kế tiếp so với bản đang ghi trong version.json (test không phụ thuộc vào số phiên bản hiện tại)."""
+        a, b, c = rt.current_win_version(self.read(rt.VERSION_JSON))
+        return (a, b, c + 1)
+
     def test_version_code_layout_matches_the_app(self):
         # OpenKeyHelper::getVersionNumber: major | minor << 8 | build << 16
-        self.assertEqual(rt.version_code((2, 0, 2)), 131074)  # giá trị có sẵn trong version.json gốc
+        self.assertEqual(rt.version_code((2, 0, 2)), 131074)
         self.assertEqual(rt.version_code((2, 0, 6)), 393218)
         self.assertEqual(rt.version_code((2, 1, 0)), 258)
 
     def test_bump_writes_json_and_rc(self):
-        macos_before = '"versionName": "2.0.3"'
-        code = rt.cmd_bump('2.0.6', self.root)
-        self.assertEqual(code, 393218)
+        parts = self.next_patch()
+        version = '%d.%d.%d' % parts
+        macos_block = rt.WIN_BLOCK.sub('', self.read(rt.VERSION_JSON))  # mọi thứ ngoài số của latestWinVersion
+        code = rt.cmd_bump(version, self.root)
+        self.assertEqual(code, rt.version_code(parts))
         js = self.read(rt.VERSION_JSON)
-        self.assertIn('"versionName": "2.0.6"', js)
-        self.assertIn('"versionCode": 393218', js)
-        self.assertIn(macos_before, js)  # mục macOS không bị đụng tới
+        self.assertIn('"versionName": "%s"' % version, js)
+        self.assertIn('"versionCode": %d' % code, js)
+        self.assertEqual(rt.WIN_BLOCK.sub('', js), macos_block)  # mục macOS và định dạng file không đổi
         rc = self.read(rt.RC_FILE)
-        for line in (' FILEVERSION 2,0,6,0', ' PRODUCTVERSION 2,0,6,0',
-                     'VALUE "FileVersion", "2.0.6.0"', 'VALUE "ProductVersion", "2.0.6.0"'):
+        for line in (' FILEVERSION %d,%d,%d,0' % parts, ' PRODUCTVERSION %d,%d,%d,0' % parts,
+                     'VALUE "FileVersion", "%s.0"' % version, 'VALUE "ProductVersion", "%s.0"' % version):
             self.assertIn(line, rc)
 
     def test_bump_rejects_bad_input_and_leaves_files_alone(self):
@@ -56,9 +63,10 @@ class BumpTests(unittest.TestCase):
         self.assertEqual(before, (self.read(rt.VERSION_JSON), self.read(rt.RC_FILE)))
 
     def test_cannot_release_the_same_version_twice(self):
-        rt.cmd_bump('2.0.6', self.root)
+        version = '%d.%d.%d' % self.next_patch()
+        rt.cmd_bump(version, self.root)
         with self.assertRaises(rt.ReleaseError):
-            rt.cmd_bump('2.0.6', self.root)
+            rt.cmd_bump(version, self.root)
 
 
 class PackageTests(unittest.TestCase):

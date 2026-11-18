@@ -12,6 +12,7 @@ You can fork, modify, improve this program. If you
 redistribute your new version, it MUST be open source.
 -----------------------------------------------------------*/
 #include "AppDelegate.h"
+#include "Theme.h"
 
 static AppDelegate* _instance;
 
@@ -49,6 +50,7 @@ int vSupportMetroApp = 1;
 int vCreateDesktopShortcut = 0;
 int vRunAsAdmin = 0;
 int vCheckNewVersion = 1;
+int vThemeMode = 0; //0 = theo Windows, 1 = sáng, 2 = tối
 //beta feature
 int vFixChromiumBrowser = 0; //new on version 2.0
 
@@ -95,11 +97,11 @@ void AppDelegate::onUpdateAvailable(std::string* newVersionPtr) {
 			TEXT("TechVKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
 			utf8ToWideString(newVersion).c_str());
 
-		int msgboxID = MessageBox(
+		int msgboxID = Theme::messageBox(
 			0,
 			msg,
 			_T("TechVKey Update"),
-			MB_ICONEXCLAMATION | MB_YESNO
+			MB_ICONQUESTION | MB_YESNO
 		);
 		if (msgboxID == IDYES) {
 			//Call OpenKeyUpdate
@@ -135,6 +137,7 @@ int AppDelegate::run(HINSTANCE hInstance) {
 
 	//init OpenKey Engine
 	OpenKeyManager::initEngine();
+	Theme::setMode(vThemeMode); //cài đặt đã được nạp
 
 	//create system tray
 	SystemTrayHelper::createSystemTrayIcon(hInstance);
@@ -226,6 +229,9 @@ void AppDelegate::onDefaultConfig() {
 	APP_SET_DATA(vTempOffOpenKey, 0);
 	APP_SET_DATA(vFixChromiumBrowser, 0);
 	APP_SET_DATA(vCheckNewVersion, 1);
+	APP_SET_DATA(vThemeMode, 0);
+	Theme::setMode(vThemeMode);
+	onThemeChanged();
 
 	if (mainDialog) {
 		mainDialog->fillData();
@@ -292,7 +298,7 @@ void AppDelegate::onQuickConvert() {
 		if (!convertToolDontAlertWhenCompleted) {
 			TCHAR msg[256];
 			LoadString(hInstance, IDS_STRING_CONVERT_COMPLETED, msg, 256);
-			MessageBox(NULL, msg, _T("TechVKey"), MB_OK);
+			Theme::messageBox(NULL, msg, _T("TechVKey"), MB_ICONINFORMATION | MB_OK);
 		}
 	}
 }
@@ -325,6 +331,15 @@ void AppDelegate::onOpenKeyAbout() {
 		aboutDialog->show();
 	} else {
 		aboutDialog->bringOnTop();
+	}
+}
+
+//Chế độ sáng/tối vừa đổi: vẽ lại mọi cửa sổ đang mở
+void AppDelegate::onThemeChanged() {
+	BaseDialog* dialogs[4] = { mainDialog, aboutDialog, macroDialog, convertDialog };
+	for (int i = 0; i < 4; i++) {
+		if (dialogs[i] != NULL)
+			Theme::refresh(dialogs[i]->getHwnd());
 	}
 }
 
