@@ -25,6 +25,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    # Kiểm thử công cụ phát hành và chặn lỗi hỏng dấu tiếng Việt (tệp có chữ có dấu trong chuỗi mà không có BOM UTF-8)
+    - name: Run script tests
+      run: python -m unittest discover -s .github/scripts -v
+
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
 
