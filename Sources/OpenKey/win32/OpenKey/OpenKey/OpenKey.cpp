@@ -35,6 +35,7 @@ static vector<string> _chromiumBrowser = {
 
 extern int vSendKeyStepByStep;
 extern int vUseGrayIcon;
+extern int vThemeMode;
 extern int vShowOnStartUp;
 extern int vRunWithWindows;
 
@@ -93,6 +94,7 @@ void OpenKeyInit() {
 	APP_GET_DATA(vAutoCapsMacro, 0);
 	APP_GET_DATA(vSendKeyStepByStep, 1);
 	APP_GET_DATA(vUseGrayIcon, 0);
+	APP_GET_DATA(vThemeMode, 0);
 	APP_GET_DATA(vShowOnStartUp, 1);
 	APP_GET_DATA(vRunWithWindows, 1);
 	OpenKeyHelper::registerRunOnStartup(vRunWithWindows);
@@ -105,7 +107,7 @@ void OpenKeyInit() {
 	APP_GET_DATA(vSupportMetroApp, 0);
 	APP_GET_DATA(vRunAsAdmin, 0);
 	APP_GET_DATA(vCreateDesktopShortcut, 0);
-	APP_GET_DATA(vCheckNewVersion, 0);
+	APP_GET_DATA(vCheckNewVersion, 1);
 	APP_GET_DATA(vRememberCode, 1);
 	APP_GET_DATA(vOtherLanguage, 1);
 	APP_GET_DATA(vTempOffOpenKey, 0);
@@ -149,7 +151,7 @@ void OpenKeyInit() {
 	if (GetKeyState(VK_LMENU) < 0 || GetKeyState(VK_RMENU) < 0) _flag |= MASK_ALT;
 	if (GetKeyState(VK_LWIN) < 0 || GetKeyState(VK_RWIN) < 0) _flag |= MASK_WIN;
 	if (GetKeyState(VK_NUMLOCK) < 0) _flag |= MASK_NUMLOCK;
-	if (GetKeyState(VK_CAPITAL) == 1) _flag |= MASK_CAPITAL;
+	if (GetKeyState(VK_CAPITAL) & 1) _flag |= MASK_CAPITAL;
 	if (GetKeyState(VK_SCROLL) < 0) _flag |= MASK_SCROLL;
 
 	//init and load macro data
@@ -468,10 +470,33 @@ static void handleMacro() {
 	SendKeyCode(_keycode | (_flag & MASK_SHIFT ? CAPS_MASK : 0));
 }
 
+static inline bool IsKeyPhysicallyDown(const int& vkCode) {
+	return (GetAsyncKeyState(vkCode) & 0x8000) != 0;
+}
+
+static inline void SyncModifierFlag(const Uint32& mask, const bool& isDown) {
+	if (isDown) _flag |= mask;
+	else _flag &= ~mask;
+}
+
+// The hook only learns that a modifier was released from its key-up event. When that event never reaches us
+// (Win+L, Ctrl+Alt+Del, UAC secure desktop, an elevated window, Remote Desktop, ...) the flag stays set until OpenKey is restarted:
+// - a stuck Shift makes the engine think every key is upper case, so every re-sent character is typed in upper case
+//   while the characters typed by Windows itself stay lower case ("mÌNH dÙNG bẢNG");
+// - a stuck Ctrl/Alt makes the engine skip Vietnamese processing entirely (see OTHER_CONTROL_KEY), the text comes out raw ("tu ddogn tawt").
+// So before handling a normal key, follow the real keyboard state instead of trusting the flags tracked from events.
+static void SyncModifierFlags() {
+	SyncModifierFlag(MASK_SHIFT, IsKeyPhysicallyDown(VK_LSHIFT) || IsKeyPhysicallyDown(VK_RSHIFT));
+	SyncModifierFlag(MASK_CONTROL, IsKeyPhysicallyDown(VK_LCONTROL) || IsKeyPhysicallyDown(VK_RCONTROL));
+	SyncModifierFlag(MASK_ALT, IsKeyPhysicallyDown(VK_LMENU) || IsKeyPhysicallyDown(VK_RMENU));
+	SyncModifierFlag(MASK_WIN, IsKeyPhysicallyDown(VK_LWIN) || IsKeyPhysicallyDown(VK_RWIN));
+}
+
 static bool SetModifierMask(const Uint16& vkCode) {
 	// For caps lock case, toggling the flag isn't enough. We need to check the actual state, which should be done before each key press.
 	// Example: the caps lock state can be changed without the key being pressed, or the key toggle is made with admin privilege, making the app not able to detect the change.
-	if (GetKeyState(VK_CAPITAL) == 1) _flag |= MASK_CAPITAL;
+	// Bit 0 is the toggle state; the whole value is not 1 while the Caps Lock key itself is held down.
+	if (GetKeyState(VK_CAPITAL) & 1) _flag |= MASK_CAPITAL;
 	else _flag &= ~MASK_CAPITAL;
 
 	if (vkCode == VK_LSHIFT || vkCode == VK_RSHIFT) _flag |= MASK_SHIFT;
@@ -480,9 +505,10 @@ static bool SetModifierMask(const Uint16& vkCode) {
 	else if (vkCode == VK_LWIN || vkCode == VK_RWIN) _flag |= MASK_WIN;
 	else if (vkCode == VK_NUMLOCK) _flag |= MASK_NUMLOCK;
 	else if (vkCode == VK_SCROLL) _flag |= MASK_SCROLL;
-	else { 
+	else {
+		SyncModifierFlags();
 		_isFlagKey = false;
-		return false; 
+		return false;
 	}
 	_isFlagKey = true;
 	return true;

@@ -15,6 +15,7 @@ redistribute your new version, it MUST be open source.
 #include "AboutDialog.h"
 #include "AppDelegate.h"
 #include "Theme.h"
+#include "../RepoConfig.h"
 
 AboutDialog::AboutDialog(const HINSTANCE & hInstance, const int & resourceId)
 	: BaseDialog(hInstance, resourceId) {
@@ -51,9 +52,9 @@ INT_PTR AboutDialog::eventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 		case NM_RETURN: {
 			PNMLINK link = (PNMLINK)lParam;
 			if (link->hdr.idFrom == IDC_SYSLINK_HOME_PAGE)
-				ShellExecute(NULL, _T("open"), _T("https://github.com/tuyenvm/OpenKey"), NULL, NULL, SW_SHOWNORMAL);
+				ShellExecute(NULL, _T("open"), OPENKEY_REPO_URL, NULL, NULL, SW_SHOWNORMAL);
 			else if (link->hdr.idFrom == IDC_SYSLINK_NEW_VERSION)
-				ShellExecute(NULL, _T("open"), _T("https://github.com/tuyenvm/OpenKey/releases"), NULL, NULL, SW_SHOWNORMAL);
+				ShellExecute(NULL, _T("open"), OPENKEY_RELEASES_URL, NULL, NULL, SW_SHOWNORMAL);
 			else if (link->hdr.idFrom == IDC_SYSLINK_FANPAGE)
 				ShellExecute(NULL, _T("open"), _T("https://www.facebook.com/OpenKeyVN"), NULL, NULL, SW_SHOWNORMAL);
 		}
@@ -80,6 +81,10 @@ void AboutDialog::initDialog() {
 	wsprintfW(buffer, _T("Phiên bản %s cho Windows - Ngày cập nhật: %s"), OpenKeyHelper::getVersionString().c_str(), _T(__DATE__));
 	SendDlgItemMessage(hDlg, IDC_STATIC_APP_VERSION, WM_SETTEXT, 0, LPARAM(buffer));
 
+	//địa chỉ repo lấy từ RepoConfig.h để không phải sửa .rc khi đổi repo
+	SetDlgItemTextW(hDlg, IDC_SYSLINK_HOME_PAGE, L"<a>" OPENKEY_REPO_URL L"</a>");
+	SetDlgItemTextW(hDlg, IDC_SYSLINK_NEW_VERSION, L"<a>" OPENKEY_RELEASES_URL L"</a>");
+
 	hFont = CreateFont(17, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE,
 		DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
 		DEFAULT_PITCH | FF_SWISS | FF_MODERN, _T("Segoe UI"));
@@ -95,27 +100,26 @@ void AboutDialog::onUpdateButton() {
 	if (OpenKeyManager::checkUpdate(newVersion)) {
 		WCHAR msg[256];
 		wsprintf(msg, 
-			TEXT("OpenKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
+			TEXT("TechVKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
 			utf8ToWideString(newVersion).c_str());
 
-		int msgboxID = MessageBox(
+		int msgboxID = Theme::messageBox(
 			hDlg,
 			msg,
-			_T("OpenKey Update"),
-			MB_ICONEXCLAMATION | MB_YESNO
+			_T("TechVKey Update"),
+			MB_ICONQUESTION | MB_YESNO
 		);
 		if (msgboxID == IDYES) {
 			//Call OpenKeyUpdate
 			if (OpenKeyHelper::launchUpdater()) {
 				AppDelegate::getInstance()->onOpenKeyExit();
 			} else {
-				MessageBox(hDlg, _T("Không mở được OpenKeyUpdate.exe, hãy kiểm tra file này có nằm cùng thư mục với OpenKey không."),
-					_T("OpenKey Update"), MB_ICONERROR | MB_OK);
+				OpenKeyHelper::showUpdaterLaunchFailed(hDlg);
 			}
 		}
 		
 	} else {
-		MessageBox(hDlg, _T("Bạn đang dùng phiên bản mới nhất!"), _T("OpenKey Update"), MB_OK);
+		Theme::messageBox(hDlg, _T("Bạn đang dùng phiên bản mới nhất!"), _T("TechVKey Update"), MB_ICONINFORMATION | MB_OK);
 	}
 	EnableWindow(hUpdateButton, true);
 }

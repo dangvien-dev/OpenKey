@@ -12,6 +12,7 @@ You can fork, modify, improve this program. If you
 redistribute your new version, it MUST be open source.
 -----------------------------------------------------------*/
 #include "AppDelegate.h"
+#include "Theme.h"
 
 static AppDelegate* _instance;
 
@@ -48,7 +49,8 @@ int vRunWithWindows = 1;
 int vSupportMetroApp = 1;
 int vCreateDesktopShortcut = 0;
 int vRunAsAdmin = 0;
-int vCheckNewVersion = 0;
+int vCheckNewVersion = 1;
+int vThemeMode = 0; //0 = theo Windows, 1 = sáng, 2 = tối
 //beta feature
 int vFixChromiumBrowser = 0; //new on version 2.0
 
@@ -59,27 +61,54 @@ bool AppDelegate::isDialogMsg(MSG & msg) const {
 		(aboutDialog != NULL && IsDialogMessage(aboutDialog->getHwnd(), &msg));
 }
 
+//Tải version.json có thể mất nhiều giây khi mạng chậm. Hook bàn phím chạy trên luồng chính, nên nếu chờ
+//mạng ở đó thì mọi phím gõ trong toàn hệ thống bị treo (và Windows có thể gỡ hook). Vì vậy kiểm tra ở luồng nền
+//rồi gửi kết quả về luồng chính bằng WM_APP_UPDATE_AVAILABLE.
+static DWORD WINAPI CheckUpdateThread(LPVOID param) {
+	HWND hWnd = (HWND)param;
+	string* newVersion = new string();
+	if (OpenKeyManager::checkUpdate(*newVersion) && PostMessage(hWnd, WM_APP_UPDATE_AVAILABLE, 0, (LPARAM)newVersion)) {
+		return 0; //luồng chính nhận quyền sở hữu newVersion
+	}
+	delete newVersion;
+	return 0;
+}
+
 void AppDelegate::checkUpdate() {
-	string newVersion;
-	if (OpenKeyManager::checkUpdate(newVersion)) {
+	HWND hWnd = FindWindow(APP_CLASS, NULL); //cửa sổ ẩn của khay hệ thống (luồng chính)
+	if (!hWnd) {
+		return;
+	}
+	HANDLE thread = CreateThread(NULL, 0, CheckUpdateThread, (LPVOID)hWnd, 0, NULL);
+	if (thread) {
+		CloseHandle(thread);
+	}
+}
+
+void AppDelegate::onUpdateAvailable(std::string* newVersionPtr) {
+	if (!newVersionPtr) {
+		return;
+	}
+	string newVersion = *newVersionPtr;
+	delete newVersionPtr;
+	{
 		WCHAR msg[256];
 		wsprintf(msg,
-			TEXT("OpenKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
+			TEXT("TechVKey Có phiên bản mới (%s), bạn có muốn cập nhật không?"),
 			utf8ToWideString(newVersion).c_str());
 
-		int msgboxID = MessageBox(
+		int msgboxID = Theme::messageBox(
 			0,
 			msg,
-			_T("OpenKey Update"),
-			MB_ICONEXCLAMATION | MB_YESNO
+			_T("TechVKey Update"),
+			MB_ICONQUESTION | MB_YESNO
 		);
 		if (msgboxID == IDYES) {
 			//Call OpenKeyUpdate
 			if (OpenKeyHelper::launchUpdater()) {
 				AppDelegate::getInstance()->onOpenKeyExit();
 			} else {
-				MessageBox(0, _T("Không mở được OpenKeyUpdate.exe, hãy kiểm tra file này có nằm cùng thư mục với OpenKey không."),
-					_T("OpenKey Update"), MB_ICONERROR | MB_OK);
+				OpenKeyHelper::showUpdaterLaunchFailed(0);
 			}
 		}
 
@@ -108,6 +137,7 @@ int AppDelegate::run(HINSTANCE hInstance) {
 
 	//init OpenKey Engine
 	OpenKeyManager::initEngine();
+	Theme::setMode(vThemeMode); //cài đặt đã được nạp
 
 	//create system tray
 	SystemTrayHelper::createSystemTrayIcon(hInstance);
@@ -198,6 +228,10 @@ void AppDelegate::onDefaultConfig() {
 	APP_SET_DATA(vOtherLanguage, 1);
 	APP_SET_DATA(vTempOffOpenKey, 0);
 	APP_SET_DATA(vFixChromiumBrowser, 0);
+	APP_SET_DATA(vCheckNewVersion, 1);
+	APP_SET_DATA(vThemeMode, 0);
+	Theme::setMode(vThemeMode);
+	onThemeChanged();
 
 	if (mainDialog) {
 		mainDialog->fillData();
@@ -264,7 +298,7 @@ void AppDelegate::onQuickConvert() {
 		if (!convertToolDontAlertWhenCompleted) {
 			TCHAR msg[256];
 			LoadString(hInstance, IDS_STRING_CONVERT_COMPLETED, msg, 256);
-			MessageBox(NULL, msg, _T("OpenKey"), MB_OK);
+			Theme::messageBox(NULL, msg, _T("TechVKey"), MB_ICONINFORMATION | MB_OK);
 		}
 	}
 }
@@ -297,6 +331,15 @@ void AppDelegate::onOpenKeyAbout() {
 		aboutDialog->show();
 	} else {
 		aboutDialog->bringOnTop();
+	}
+}
+
+//Chế độ sáng/tối vừa đổi: vẽ lại mọi cửa sổ đang mở
+void AppDelegate::onThemeChanged() {
+	BaseDialog* dialogs[4] = { mainDialog, aboutDialog, macroDialog, convertDialog };
+	for (int i = 0; i < 4; i++) {
+		if (dialogs[i] != NULL)
+			Theme::refresh(dialogs[i]->getHwnd());
 	}
 }
 

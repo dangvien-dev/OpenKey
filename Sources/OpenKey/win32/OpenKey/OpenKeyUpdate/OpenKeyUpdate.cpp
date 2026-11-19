@@ -14,7 +14,9 @@ redistribute your new version, it MUST be open source.
 
 #include "framework.h"
 #include "OpenKeyUpdate.h"
+#include "../RepoConfig.h"
 #include <Urlmon.h>
+#include <shellapi.h>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -25,6 +27,7 @@ using namespace std;
 INT_PTR CALLBACK MainDialogProcess(HWND, UINT, WPARAM, LPARAM);
 void StartUpdate();
 static void SetWorkingDirectoryToExeFolder();
+static void DeleteOldUpdaterBackup();
 HWND hDlg;
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -35,6 +38,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     SetWorkingDirectoryToExeFolder();
+	DeleteOldUpdaterBackup();
 
 	hDlg = CreateDialogParam(hInstance, MAKEINTRESOURCE(IDD_DIALOG_UPDATER), 0, MainDialogProcess, 0);
 	ShowWindow(hDlg, SW_SHOWNORMAL);
@@ -90,8 +94,60 @@ static void SetWorkingDirectoryToExeFolder() {
 	}
 }
 
+//Đường dẫn của chính OpenKeyUpdate.exe đang chạy (rỗng nếu không lấy được)
+static wstring SelfPath() {
+	WCHAR self[MAX_PATH];
+	DWORD len = GetModuleFileNameW(NULL, self, MAX_PATH);
+	if (len == 0 || len >= MAX_PATH) {
+		return L"";
+	}
+	return wstring(self, len);
+}
+
+//Lần cập nhật trước đã đổi tên bản updater cũ thành *.old (không xóa được khi nó còn chạy): giờ dọn đi.
+static void DeleteOldUpdaterBackup() {
+	wstring self = SelfPath();
+	if (!self.empty()) {
+		DeleteFileW((self + L".old").c_str());
+	}
+}
+
+//Thay chính OpenKeyUpdate.exe bằng bản mới trong gói. Windows không cho ghi đè tệp .exe đang chạy nhưng cho ĐỔI TÊN nó:
+//đổi tên bản đang chạy thành *.old rồi chuyển bản mới vào đúng chỗ. Trước đây updater không bao giờ được cập nhật nên sửa lỗi
+//ở updater không tới được máy người dùng. Chỉ là "cố gắng": thất bại thì giữ nguyên bản cũ, không ảnh hưởng việc cập nhật.
+static void ReplaceSelfBestEffort() {
+	wstring self = SelfPath();
+	if (self.empty() || GetFileAttributes(L"_OpenKeyUpdate\\OpenKeyUpdate.exe") == INVALID_FILE_ATTRIBUTES) {
+		return;
+	}
+	wstring backup = self + L".old";
+	DeleteFileW(backup.c_str());
+	if (!MoveFileExW(self.c_str(), backup.c_str(), MOVEFILE_REPLACE_EXISTING)) {
+		return;
+	}
+	if (!MoveFileExW(L"_OpenKeyUpdate\\OpenKeyUpdate.exe", self.c_str(), MOVEFILE_COPY_ALLOWED)) {
+		MoveFileExW(backup.c_str(), self.c_str(), MOVEFILE_REPLACE_EXISTING); //trả lại bản cũ
+	}
+}
+
+//Mở lại TechVKey vừa cập nhật (cùng thư mục với updater). Thử CreateProcess trước; nếu Windows đòi nâng quyền
+//(ERROR_ELEVATION_REQUIRED) hoặc lỗi khác thì để shell mở.
+static bool RelaunchOpenKey(const wstring& dir) {
+	wstring exe = dir + L"\\OpenKey64.exe";
+	wstring cmd = L"\"" + exe + L"\"";
+	STARTUPINFOW si = { sizeof(si) };
+	PROCESS_INFORMATION pi = {};
+	if (CreateProcessW(exe.c_str(), &cmd[0], NULL, NULL, FALSE, 0, NULL, dir.c_str(), &si, &pi)) {
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+		return true;
+	}
+	HINSTANCE r = ShellExecuteW(NULL, L"open", exe.c_str(), NULL, dir.c_str(), SW_SHOWNORMAL);
+	return (INT_PTR)r > 32;
+}
+
 static void FailAndExit() {
-	MessageBox(hDlg, _T("Có lỗi trong quá trình cập nhật, vui lòng thử lại sau!"), _T("OpenKey Update"), MB_OK);
+	MessageBox(hDlg, _T("Có lỗi trong quá trình cập nhật, vui lòng thử lại sau!"), _T("TechVKey Update"), MB_OK);
 	ExitProcess(0);
 }
 
@@ -142,7 +198,7 @@ DWORD WINAPI UpdateThreadFunction(LPVOID lpParam) {
 		FailAndExit();
 	}
 	wstring path = wstring(currentDir) + L"\\_OpenKey.tempf";
-	HRESULT res = URLDownloadToFile(NULL, L"https://raw.githubusercontent.com/tuyenvm/OpenKey/master/version.json", path.c_str(), 0, NULL);
+	HRESULT res = URLDownloadToFile(NULL, OPENKEY_VERSION_JSON_URL, path.c_str(), 0, NULL);
 
 	wstring data;
 	if (res == S_OK) {
@@ -169,7 +225,7 @@ DWORD WINAPI UpdateThreadFunction(LPVOID lpParam) {
 	if (!IsSafeVersionName(versionName)) FailAndExit();
 
 	//download zip file
-	wstring updateUrl = L"https://github.com/tuyenvm/OpenKey/releases/download/" + versionName +
+	wstring updateUrl = OPENKEY_RELEASE_DOWNLOAD_URL + versionName +
 		L"/OpenKey" + versionName + L"-Windows.zip";
 	wstring zipPath = wstring(currentDir) + L"\\_OpenKeyUpdate.zip";
 	res = URLDownloadToFile(NULL, updateUrl.c_str(), zipPath.c_str(), 0, NULL);
@@ -196,12 +252,18 @@ DWORD WINAPI UpdateThreadFunction(LPVOID lpParam) {
 			Sleep(500);
 		}
 	}
+	if (replaced) {
+		ReplaceSelfBestEffort(); //phải làm trước CleanUpUpdateFiles vì nó xóa bản updater mới vừa giải nén
+	}
 	CleanUpUpdateFiles(zipPath);
 	if (!replaced) {
 		FailAndExit();
 	}
 
-	MessageBox(hDlg, _T("Bạn đã cập nhật OpenKey bản mới nhất thành công!"), _T("OpenKey Update"), MB_OK);
+	MessageBox(hDlg, _T("Bạn đã cập nhật TechVKey bản mới nhất thành công!\nTechVKey sẽ tự mở lại."), _T("TechVKey Update"), MB_OK);
+	if (!RelaunchOpenKey(wstring(currentDir))) {
+		MessageBox(hDlg, _T("Chưa tự mở lại được TechVKey, bạn hãy mở lại bằng tay."), _T("TechVKey Update"), MB_OK);
+	}
 	ExitProcess(0);
 	return 0;
 }

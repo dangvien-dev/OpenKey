@@ -1,0 +1,100 @@
+name: Release
+
+# Phát hành bản cập nhật cho TechVKey (Windows).
+# Cách dùng: GitHub > Actions > Release > Run workflow > nhập số phiên bản (ví dụ 2.0.6).
+# Workflow sẽ: ghi số phiên bản vào mã nguồn, build x86 + x64, tạo release có tag = số phiên bản
+# kèm file OpenKey<số phiên bản>-Windows.zip, rồi cập nhật version.json trên master.
+# Các máy đang chạy TechVKey đọc version.json đó và hỏi người dùng có muốn cập nhật không.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Số phiên bản Windows mới, dạng X.Y.Z (ví dụ 2.0.6), phải lớn hơn bản đang ghi trong version.json'
+        required: true
+        type: string
+      notes:
+        description: 'Ghi chú phát hành (để trống thì GitHub tự tạo từ các commit)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  SOLUTION_FILE_PATH: .\Sources\OpenKey\win32\OpenKey
+  # Đọc qua biến môi trường rồi luôn đặt trong dấu nháy ("$VERSION"): giá trị nhập vào không bao giờ được chèn trực tiếp vào lệnh.
+  VERSION: ${{ inputs.version }}
+
+jobs:
+  release:
+    # version.json được đọc từ nhánh master, nên chỉ phát hành từ master
+    if: github.ref == 'refs/heads/master'
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Kiểm tra số phiên bản và ghi vào mã nguồn
+      shell: bash
+      run: |
+        set -euo pipefail
+        python .github/scripts/release_tools.py bump "$VERSION"
+        if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" > /dev/null 2>&1; then
+          echo "Tag $VERSION đã tồn tại, hãy chọn số phiên bản khác." >&2
+          exit 1
+        fi
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build x86
+      run: msbuild -m -target:Rebuild -p:Configuration=Release -p:Platform=x86 ${{ env.SOLUTION_FILE_PATH }}
+
+    - name: Build x64
+      run: msbuild -m -target:Rebuild -p:Configuration=Release -p:Platform=x64 ${{ env.SOLUTION_FILE_PATH }}
+
+    - name: Đóng gói file zip cho bản cập nhật
+      shell: bash
+      run: python .github/scripts/release_tools.py package "$VERSION" dist
+
+    - name: Tạo release và đính kèm file zip
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        NOTES: ${{ inputs.notes }}
+      run: |
+        set -euo pipefail
+        args=(release create "$VERSION" "dist/OpenKey$VERSION-Windows.zip" --title "TechVKey $VERSION" --target "$GITHUB_SHA")
+        if [ -n "$NOTES" ]; then
+          args+=(--notes "$NOTES")
+        else
+          args+=(--generate-notes)
+        fi
+        gh "${args[@]}"
+
+    # Chỉ công bố SAU KHI file zip đã có trên release: máy nào thấy version.json mới thì tải được ngay.
+    - name: Công bố phiên bản mới (version.json và OpenKey.rc)
+      shell: bash
+      run: |
+        set -euo pipefail
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add version.json Sources/OpenKey/win32/OpenKey/OpenKey/OpenKey.rc
+        git commit -m "Phát hành $VERSION: cập nhật version.json và số phiên bản"
+        git pull --rebase origin master
+        git push origin HEAD:master
+        {
+          echo "### Đã phát hành TechVKey $VERSION"
+          echo "Các máy đang chạy TechVKey sẽ hỏi cập nhật ở lần khởi động tiếp theo."
+        } >> "$GITHUB_STEP_SUMMARY"

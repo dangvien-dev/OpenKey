@@ -1,0 +1,4 @@
+# Chỉ cần để VẼ LẠI icon. Dựng ứng dụng (MSBuild) không cần Python hay các thư viện này.
+skia-python>=144
+numpy
+Pillow

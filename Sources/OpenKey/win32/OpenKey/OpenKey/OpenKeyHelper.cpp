@@ -1,4 +1,4 @@
-/*----------------------------------------------------------
+﻿/*----------------------------------------------------------
 OpenKey - The Cross platform Open source Vietnamese Keyboard application.
 
 Copyright (C) 2019 Mai Vu Tuyen
@@ -16,6 +16,8 @@ redistribute your new version, it MUST be open source.
 #include <Urlmon.h>
 #include <fstream>
 #include <sstream>
+#include "../RepoConfig.h"
+#include "Theme.h"
 
 #pragma comment(lib, "version.lib")
 #pragma comment(lib, "Urlmon.lib")
@@ -377,18 +379,65 @@ wstring OpenKeyHelper::getVersionString() {
 	}
 }
 
+//kết quả lần mở OpenKeyUpdate.exe gần nhất, để báo lỗi cho rõ
+static wstring _updaterPath;
+static DWORD _updaterError = 0;
+
 bool OpenKeyHelper::launchUpdater() {
 	//Don't use GetCurrentDirectory: when OpenKey is started at logon (Run key / Task Scheduler)
 	//the working directory is C:\Windows\System32, not the folder of the exe.
 	wstring dir = getFullPath();
 	size_t slash = dir.find_last_of(L"\\/");
 	if (slash == wstring::npos) {
+		_updaterPath.clear();
+		_updaterError = ERROR_PATH_NOT_FOUND;
 		return false;
 	}
 	dir.resize(slash + 1); //keep the trailing backslash
 	wstring updater = dir + L"OpenKeyUpdate.exe";
-	//OpenKeyUpdate replaces files relative to its working directory, so start it in our folder
-	return (INT_PTR)ShellExecuteW(NULL, L"open", updater.c_str(), NULL, dir.c_str(), SW_SHOWNORMAL) > 32;
+	_updaterPath = updater;
+	_updaterError = 0;
+
+	//CreateProcess trước: không đi qua Attachment Manager / SmartScreen của shell, nên file tải từ internet
+	//(có Mark of the Web) không bị cảnh báo hoặc chặn khi được mở từ một tiến trình chạy nền.
+	//OpenKeyUpdate replaces files relative to its working directory, so start it in our folder.
+	wstring cmd = L"\"" + updater + L"\"";
+	STARTUPINFOW si;
+	ZeroMemory(&si, sizeof(si));
+	si.cb = sizeof(si);
+	PROCESS_INFORMATION pi;
+	ZeroMemory(&pi, sizeof(pi));
+	if (CreateProcessW(updater.c_str(), &cmd[0], NULL, NULL, FALSE, 0, NULL, dir.c_str(), &si, &pi)) {
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+		return true;
+	}
+	DWORD createError = GetLastError();
+
+	//dự phòng: ShellExecute như trước (xử lý được trường hợp file cần nâng quyền)
+	INT_PTR result = (INT_PTR)ShellExecuteW(NULL, L"open", updater.c_str(), NULL, dir.c_str(), SW_SHOWNORMAL);
+	if (result > 32) {
+		return true;
+	}
+	_updaterError = createError != 0 ? createError : (DWORD)result;
+	return false;
+}
+
+void OpenKeyHelper::showUpdaterLaunchFailed(HWND parent) {
+	bool missing = _updaterPath.empty() || GetFileAttributesW(_updaterPath.c_str()) == INVALID_FILE_ATTRIBUTES;
+	wstring msg;
+	if (missing) {
+		msg = L"Không tìm thấy OpenKeyUpdate.exe trong thư mục của chương trình:\n" + _updaterPath +
+			L"\n\nHãy chép OpenKeyUpdate.exe vào cùng thư mục với OpenKey64.exe rồi thử lại.";
+	} else {
+		msg = L"Windows không cho chạy:\n" + _updaterPath + L"\n(mã lỗi " + std::to_wstring(_updaterError) + L")" +
+			L"\n\nNếu file tải từ internet: chuột phải file > Properties > tích Unblock > OK, rồi thử lại. "
+			L"Cũng nên kiểm tra phần mềm diệt virus.";
+	}
+	msg += L"\n\nBạn có muốn mở trang tải bản mới để cập nhật thủ công không?";
+	if (Theme::messageBox(parent, msg.c_str(), L"TechVKey Update", MB_ICONERROR | MB_YESNO) == IDYES) {
+		ShellExecuteW(NULL, L"open", OPENKEY_RELEASES_URL, NULL, NULL, SW_SHOWNORMAL);
+	}
 }
 
 wstring OpenKeyHelper::getContentOfUrl(LPCTSTR url){

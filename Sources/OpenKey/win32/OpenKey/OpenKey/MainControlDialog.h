@@ -18,7 +18,7 @@ class MainControlDialog : public BaseDialog {
 private:
 	HWND hTab, hTabPage1, hTabPage2, hTabPage3, hTabPage4;
 	HWND comboBoxInputType;
-	HWND comboBoxTableCode;
+	HWND comboBoxTableCode, comboTheme;
 	HWND checkCtrl, checkAlt, checkWin, checkShift, textSwitchKey, checkBeep;
 	HWND checkVietnamese, checkEnglish;
 	HWND checkModernOrthorgraphy, checkFixRecommendBrowser, checkShowOnStartup, checkRunWithWindows,
@@ -37,7 +37,6 @@ private:
 	void onTabIndexChanged();
 	void onUpdateButton();
 	void requestRestartAsAdmin();
-	void drawHeader(LPDRAWITEMSTRUCT dis);
 protected:
 	INT_PTR eventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	static INT_PTR CALLBACK tabPageEventProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);

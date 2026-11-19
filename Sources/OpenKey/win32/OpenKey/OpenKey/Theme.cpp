@@ -1,4 +1,4 @@
-/*----------------------------------------------------------
+﻿/*----------------------------------------------------------
 OpenKey - The Cross platform Open source Vietnamese Keyboard application.
 
 Copyright (C) 2019 Mai Vu Tuyen
@@ -23,7 +23,52 @@ redistribute your new version, it MUST be open source.
 
 namespace Theme {
 
+/* ---------- Token màu: định nghĩa (giá trị ban đầu là palette sáng; applyPalette đổi theo chế độ) ---------- */
+COLORREF kBgMain        = RGB(0xF3, 0xF3, 0xF3);
+COLORREF kCard          = RGB(0xFF, 0xFF, 0xFF);
+COLORREF kBorder        = RGB(0xE5, 0xE5, 0xE5);
+COLORREF kBorderInput   = RGB(0xD1, 0xD1, 0xD1);
+COLORREF kControlBorder = RGB(0x70, 0x70, 0x70);
+COLORREF kTextPrimary   = RGB(0x1A, 0x1A, 0x1A);
+COLORREF kTextSecondary = RGB(0x61, 0x61, 0x61);
+COLORREF kTextMuted     = RGB(0x5C, 0x5C, 0x5C);
+COLORREF kTextDisabled  = RGB(0xA6, 0xA6, 0xA6);
+COLORREF kAccent        = RGB(0x0F, 0x6C, 0xBD);
+COLORREF kAccentHover   = RGB(0x11, 0x5E, 0xA3);
+COLORREF kAccentPressed = RGB(0x0F, 0x54, 0x8C);
+COLORREF kAccentSoft    = RGB(0xEB, 0xF3, 0xFC);
+COLORREF kOnAccent      = RGB(0xFF, 0xFF, 0xFF);
+COLORREF kHover         = RGB(0xF5, 0xF5, 0xF5);
+COLORREF kDanger        = RGB(0xC4, 0x2B, 0x1C);
+COLORREF kDangerText    = RGB(0xC4, 0x2B, 0x1C);
+COLORREF kDangerSoft    = RGB(0xFD, 0xE7, 0xE9);
+COLORREF kDangerSoftPressed = RGB(0xF9, 0xD2, 0xD5);
+
 namespace {
+
+/* ---------- Palette sáng / tối ---------- */
+struct Palette {
+	COLORREF bgMain, card, border, borderInput, controlBorder;
+	COLORREF textPrimary, textSecondary, textMuted, textDisabled;
+	COLORREF accent, accentHover, accentPressed, accentSoft, onAccent, hover;
+	COLORREF danger, dangerText, dangerSoft, dangerSoftPressed;
+};
+
+const Palette kPaletteLight = {
+	RGB(0xF3, 0xF3, 0xF3), RGB(0xFF, 0xFF, 0xFF), RGB(0xE5, 0xE5, 0xE5), RGB(0xD1, 0xD1, 0xD1), RGB(0x70, 0x70, 0x70),
+	RGB(0x1A, 0x1A, 0x1A), RGB(0x61, 0x61, 0x61), RGB(0x5C, 0x5C, 0x5C), RGB(0xA6, 0xA6, 0xA6),
+	RGB(0x0F, 0x6C, 0xBD), RGB(0x11, 0x5E, 0xA3), RGB(0x0F, 0x54, 0x8C), RGB(0xEB, 0xF3, 0xFC), RGB(0xFF, 0xFF, 0xFF), RGB(0xF5, 0xF5, 0xF5),
+	RGB(0xC4, 0x2B, 0x1C), RGB(0xC4, 0x2B, 0x1C), RGB(0xFD, 0xE7, 0xE9), RGB(0xF9, 0xD2, 0xD5)
+};
+
+// Kiểu Windows 11 tối: nền #202020, card #2B2B2B, màu nhấn xanh sáng hơn và chữ đặt trên nút chính là chữ TỐI
+// (đã kiểm tra độ tương phản: chữ trên card 13:1, chữ trên nút chính 6:1, viền ô nhập 3:1).
+const Palette kPaletteDark = {
+	RGB(0x20, 0x20, 0x20), RGB(0x2B, 0x2B, 0x2B), RGB(0x3D, 0x3D, 0x3D), RGB(0x75, 0x75, 0x75), RGB(0xA6, 0xA6, 0xA6),
+	RGB(0xF5, 0xF5, 0xF5), RGB(0xC7, 0xC7, 0xC7), RGB(0xBD, 0xBD, 0xBD), RGB(0x7A, 0x7A, 0x7A),
+	RGB(0x4C, 0x9B, 0xEF), RGB(0x6A, 0xAE, 0xF3), RGB(0x35, 0x84, 0xDA), RGB(0x26, 0x34, 0x45), RGB(0x0B, 0x1A, 0x2B), RGB(0x35, 0x35, 0x35),
+	RGB(0xFF, 0x7B, 0x72), RGB(0xFF, 0x7B, 0x72), RGB(0x3C, 0x25, 0x28), RGB(0x4D, 0x2D, 0x31)
+};
 
 /* ---------- Window properties dùng để gắn metadata lên control ---------- */
 const wchar_t* const kPropKind  = L"OKTheme.Kind";   // ButtonKind
@@ -33,10 +78,10 @@ const wchar_t* const kPropCard  = L"OKTheme.Card";   // control nằm trên card
 const wchar_t* const kPropPage  = L"OKTheme.Page";   // dialog là trang của tab (nền trắng)
 
 /* ---------- Kích thước @96dpi ---------- */
-const int kTabHeaderPx   = 34;
+const int kTabHeaderPx   = 32;
 const int kTabInsetPx    = 8;
-const int kCardRadiusPx  = 8;
-const int kButtonRadiusPx = 6;
+const int kCardRadiusPx  = 6;
+const int kButtonRadiusPx = 4;
 const int kCheckBoxPx    = 16;
 const int kCheckGapPx    = 8;
 const int kCheckPadLeftPx = 2;
@@ -49,6 +94,9 @@ bool      g_hasIconFont = false;
 HBRUSH    g_brBg = NULL;
 HBRUSH    g_brCard = NULL;
 int       g_enabledCache = -1;
+int       g_mode = 0;          // 0 = theo Windows, 1 = sáng, 2 = tối
+int       g_darkCache = -1;    // -1 = chưa tính; 0/1 = kết quả isDark()
+int       g_appliedDark = -1;  // bảng màu đang áp dụng
 
 struct FontEntry {
 	LOGFONTW lf;
@@ -93,9 +141,49 @@ void ensureInit() {
 	if (g_dpi <= 0)
 		g_dpi = 96;
 
+	g_hasIconFont = fontInstalled(L"Segoe MDL2 Assets");
+}
+
+// Giá trị AppsUseLightTheme (0 = ứng dụng dùng giao diện tối). Không đọc được thì coi như sáng.
+bool windowsAppsUseDark() {
+	HKEY key;
+	if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 0, KEY_READ, &key) != ERROR_SUCCESS)
+		return false;
+	DWORD value = 1, size = sizeof(value), type = 0;
+	LONG rc = RegQueryValueExW(key, L"AppsUseLightTheme", NULL, &type, (LPBYTE)&value, &size);
+	RegCloseKey(key);
+	return rc == ERROR_SUCCESS && type == REG_DWORD && value == 0;
+}
+
+bool computeDark() {
+	if (g_mode == 1) return false;
+	if (g_mode == 2) return true;
+	return windowsAppsUseDark();
+}
+
+// Gán token theo palette và dựng lại 2 brush nền. Trả về true nếu bảng màu thật sự đổi.
+bool applyPalette(bool dark) {
+	if ((dark ? 1 : 0) == g_appliedDark && g_brBg && g_brCard)
+		return false;
+	const Palette& p = dark ? kPaletteDark : kPaletteLight;
+	kBgMain = p.bgMain; kCard = p.card; kBorder = p.border; kBorderInput = p.borderInput; kControlBorder = p.controlBorder;
+	kTextPrimary = p.textPrimary; kTextSecondary = p.textSecondary; kTextMuted = p.textMuted; kTextDisabled = p.textDisabled;
+	kAccent = p.accent; kAccentHover = p.accentHover; kAccentPressed = p.accentPressed; kAccentSoft = p.accentSoft;
+	kOnAccent = p.onAccent; kHover = p.hover;
+	kDanger = p.danger; kDangerText = p.dangerText; kDangerSoft = p.dangerSoft; kDangerSoftPressed = p.dangerSoftPressed;
+	if (g_brBg) DeleteObject(g_brBg);
+	if (g_brCard) DeleteObject(g_brCard);
 	g_brBg = CreateSolidBrush(kBgMain);
 	g_brCard = CreateSolidBrush(kCard);
-	g_hasIconFont = fontInstalled(L"Segoe MDL2 Assets");
+	g_appliedDark = dark ? 1 : 0;
+	return true;
+}
+
+// Bảo đảm bảng màu khớp với chế độ hiện tại. Gọi đầu mỗi lần vẽ/áp dụng; rẻ khi không có gì đổi (đã cache).
+void ensureTheme() {
+	if (g_darkCache < 0)
+		g_darkCache = computeDark() ? 1 : 0;
+	applyPalette(g_darkCache == 1);
 }
 
 inline int px(int px96) { return MulDiv(px96, g_dpi, 96); }
@@ -134,17 +222,6 @@ HFONT semiboldOf(HFONT base) {
 	lf.lfQuality = CLEARTYPE_QUALITY;
 	HFONT f = cachedFont(lf);
 	return f ? f : base;
-}
-
-// Font Segoe UI cỡ `points` (pt), weight tùy chọn.
-HFONT uiFont(int points, bool semibold) {
-	LOGFONTW lf = { 0 };
-	lf.lfHeight = -MulDiv(points, g_dpi, 72);
-	lf.lfWeight = FW_NORMAL;
-	lf.lfCharSet = DEFAULT_CHARSET;
-	lf.lfQuality = CLEARTYPE_QUALITY;
-	lstrcpynW(lf.lfFaceName, semibold ? L"Segoe UI Semibold" : L"Segoe UI", LF_FACESIZE);
-	return cachedFont(lf);
 }
 
 HFONT iconFont(int heightPx) {
@@ -231,6 +308,7 @@ void drawRound(HDC dc, float x, float y, float w, float h, float r,
 			   COLORREF fill, COLORREF stroke, float strokeW) {
 	Gdiplus::Graphics g(dc);
 	g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf); // tâm pixel ở nửa số nguyên: nét 1px đặt tại x.5 mới nằm gọn 1 hàng
 	float inset = (stroke != CLR_NONE) ? strokeW / 2.0f : 0.0f;
 	float rr = r - inset;
 	if (rr < 0.0f) rr = 0.0f;
@@ -249,6 +327,7 @@ void drawRound(HDC dc, float x, float y, float w, float h, float r,
 void drawEllipse(HDC dc, float x, float y, float w, float h, COLORREF fill, COLORREF stroke, float strokeW) {
 	Gdiplus::Graphics g(dc);
 	g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf); // tâm pixel ở nửa số nguyên: nét 1px đặt tại x.5 mới nằm gọn 1 hàng
 	float inset = (stroke != CLR_NONE) ? strokeW / 2.0f : 0.0f;
 	if (fill != CLR_NONE) {
 		Gdiplus::SolidBrush b(gcol(fill));
@@ -263,6 +342,7 @@ void drawEllipse(HDC dc, float x, float y, float w, float h, COLORREF fill, COLO
 void drawTick(HDC dc, float x, float y, float s, COLORREF color, float penW) {
 	Gdiplus::Graphics g(dc);
 	g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf); // tâm pixel ở nửa số nguyên: nét 1px đặt tại x.5 mới nằm gọn 1 hàng
 	Gdiplus::Pen pen(gcol(color), penW);
 	pen.SetLineJoin(Gdiplus::LineJoinRound);
 	pen.SetStartCap(Gdiplus::LineCapRound);
@@ -278,6 +358,7 @@ void drawTick(HDC dc, float x, float y, float s, COLORREF color, float penW) {
 void drawDash(HDC dc, float x, float y, float s, COLORREF color, float penW) {
 	Gdiplus::Graphics g(dc);
 	g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+	g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf); // tâm pixel ở nửa số nguyên: nét 1px đặt tại x.5 mới nằm gọn 1 hàng
 	Gdiplus::Pen pen(gcol(color), penW);
 	pen.SetStartCap(Gdiplus::LineCapRound);
 	pen.SetEndCap(Gdiplus::LineCapRound);
@@ -326,14 +407,14 @@ void drawPushButton(NMCUSTOMDRAW* nm) {
 	} else if (kind == ButtonKind::Primary) {
 		fill = pressed ? kAccentPressed : (hot ? kAccentHover : kAccent);
 		border = fill;
-		textColor = RGB(0xFF, 0xFF, 0xFF);
+		textColor = kOnAccent;
 	} else if (kind == ButtonKind::Danger) {
 		fill = pressed ? kDangerSoftPressed : (hot ? kDangerSoft : kCard);
-		border = kDanger;
+		border = (hot || pressed) ? kDanger : kBorderInput;
 		textColor = kDangerText;
 	} else {
-		fill = pressed ? kBorder : (hot ? RGB(0xF8, 0xFA, 0xFC) : kCard);
-		border = (hot || isDefault) ? kAccent : kBorderInput;
+		fill = pressed ? kBorder : (hot ? kHover : kCard);
+		border = isDefault ? kAccent : kBorderInput;
 		textColor = kTextPrimary;
 	}
 
@@ -420,11 +501,11 @@ void drawCheckOrRadio(NMCUSTOMDRAW* nm, bool radio) {
 						disabled ? kBorderInput : kAccent, CLR_NONE, 0.0f);
 		}
 	} else {
-		drawRound(dc, bx, by, s, s, (float)px(4), boxFill, boxBorder, 1.0f);
+		drawRound(dc, bx, by, s, s, (float)px(3), boxFill, boxBorder, 1.0f);
 		if (checked)
-			drawTick(dc, bx, by, s, RGB(0xFF, 0xFF, 0xFF), (float)px(2));
+			drawTick(dc, bx, by, s, kOnAccent, (float)px(2));
 		else if (indeterminate)
-			drawDash(dc, bx, by, s, RGB(0xFF, 0xFF, 0xFF), (float)px(2));
+			drawDash(dc, bx, by, s, kOnAccent, (float)px(2));
 	}
 
 	wchar_t text[256] = { 0 };
@@ -484,7 +565,7 @@ void paintCard(HWND h, HDC target) {
 	if (text[0]) {
 		RECT tr = { px(12), px(8), w - px(12), px(8) + px(20) };
 		drawText(dc, text, tr, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_END_ELLIPSIS,
-				 kPrimary, semiboldOf(controlFont(h)));
+				 kTextPrimary, semiboldOf(controlFont(h)));
 	}
 	mem.flush(0, 0);
 }
@@ -559,11 +640,11 @@ void paintTab(HWND h, HDC target, const TabState* state) {
 					  (float)(headerH - px(5) - px(6)), (float)px(6), kBorder, CLR_NONE, 0.0f);
 
 		drawText(dc, text, cell, DT_CENTER | DT_VCENTER | DT_SINGLELINE,
-				 isSel ? kAccent : (isHot ? kTextPrimary : kTextMuted), isSel ? bold : font);
+				 (isSel || isHot) ? kTextPrimary : kTextMuted, isSel ? bold : font);
 
 		if (isSel) {
 			// thanh gạch chân đè lên viền trên của card
-			float bh = (float)px(3);
+			float bh = (float)px(2);
 			drawRound(dc, (float)(cell.left + px(12)), (float)headerH - bh, (float)(rcW(cell) - px(24)), bh,
 					  bh / 2.0f, kAccent, CLR_NONE, 0.0f);
 			if (focus)
@@ -623,8 +704,315 @@ LRESULT CALLBACK tabSubclassProc(HWND h, UINT msg, WPARAM wp, LPARAM lp, UINT_PT
 	return DefSubclassProc(h, msg, wp, lp);
 }
 
-/* ---------- Áp dụng cho dialog ---------- */
-void applyTitleBar(HWND h) {
+/* ---------- Ô nhập bo góc: Edit và ComboBox (subclass) ---------- */
+const int kInputRadiusPx = 6;
+const int kInputPadXPx   = 8;
+
+struct InputState {
+	bool hot;
+	bool tracking;
+};
+
+COLORREF inputBorder(bool disabled, bool focus, bool hot) {
+	if (disabled) return kBorder;
+	if (focus) return kAccent;
+	return hot ? kControlBorder : kBorderInput;
+}
+
+// Khung bo góc + nền; vùng ngoài góc bo được tô bằng màu nền của cha để không lộ góc vuông.
+void paintInputBox(HDC dc, int w, int hh, HWND h, bool disabled, bool focus, bool hot) {
+	RECT local = { 0, 0, w, hh };
+	fillRect(dc, local, bgFor(h));
+	float sw = focus ? (float)px(2) : 1.0f;
+	drawRound(dc, 0, 0, (float)w, (float)hh, (float)px(kInputRadiusPx),
+			  disabled ? kBgMain : kCard, inputBorder(disabled, focus, hot), sw);
+}
+
+void trackHot(HWND h, InputState* st, bool frameOnly) {
+	if (!st->hot) {
+		st->hot = true;
+		if (frameOnly) RedrawWindow(h, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+		else InvalidateRect(h, NULL, FALSE);
+	}
+	if (!st->tracking) {
+		TRACKMOUSEEVENT tme = { sizeof(tme), TME_LEAVE, h, 0 };
+		if (TrackMouseEvent(&tme))
+			st->tracking = true;
+	}
+}
+
+void leaveHot(HWND h, InputState* st, bool frameOnly) {
+	st->hot = false;
+	st->tracking = false;
+	if (frameOnly) RedrawWindow(h, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+	else InvalidateRect(h, NULL, FALSE);
+}
+
+// ---- Edit: vẽ khung ở vùng non-client, vùng client thụt vào để chữ không đè lên góc bo
+void paintEditFrame(HWND h, const InputState* st) {
+	RECT wr;
+	GetWindowRect(h, &wr);
+	int w = rcW(wr), hh = rcH(wr);
+	if (w <= 0 || hh <= 0)
+		return;
+	HDC dc = GetWindowDC(h);
+	if (!dc)
+		return;
+	RECT cr;
+	GetClientRect(h, &cr);
+	POINT org = { 0, 0 };
+	ClientToScreen(h, &org);
+	int cx = org.x - wr.left, cy = org.y - wr.top;
+	ExcludeClipRect(dc, cx, cy, cx + rcW(cr), cy + rcH(cr)); // không đè lên vùng chữ
+	{
+		MemDC mem(dc, w, hh);
+		paintInputBox(mem.dc(), w, hh, h, !IsWindowEnabled(h), GetFocus() == h, st && st->hot);
+		mem.flush(0, 0);
+	}
+	ReleaseDC(h, dc);
+}
+
+LRESULT CALLBACK editSubclassProc(HWND h, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR id, DWORD_PTR ref) {
+	InputState* st = (InputState*)ref;
+	switch (msg) {
+	case WM_NCCALCSIZE: {
+		LRESULT r = DefSubclassProc(h, msg, wp, lp);
+		RECT* rc = wp ? &((NCCALCSIZE_PARAMS*)lp)->rgrc[0] : (RECT*)lp;
+		int padX = px(kInputPadXPx);
+		int padY = px(4);
+		if (!(GetWindowLong(h, GWL_STYLE) & ES_MULTILINE)) {
+			// một dòng: căn giữa chữ theo chiều dọc
+			HDC dc = GetDC(h);
+			HFONT old = (HFONT)SelectObject(dc, controlFont(h));
+			TEXTMETRICW tm;
+			GetTextMetricsW(dc, &tm);
+			SelectObject(dc, old);
+			ReleaseDC(h, dc);
+			padY = ((rc->bottom - rc->top) - tm.tmHeight) / 2;
+			if (padY < px(2)) padY = px(2);
+		}
+		rc->left += padX;
+		rc->right -= padX;
+		rc->top += padY;
+		rc->bottom -= padY;
+		if (rc->right < rc->left) rc->right = rc->left;
+		if (rc->bottom < rc->top) rc->bottom = rc->top;
+		return r;
+	}
+	case WM_NCPAINT:
+		paintEditFrame(h, st);
+		return 0;
+	case WM_MOUSEMOVE:
+		trackHot(h, st, true);
+		break;
+	case WM_MOUSELEAVE:
+		leaveHot(h, st, true);
+		break;
+	case WM_SETFOCUS:
+	case WM_KILLFOCUS:
+	case WM_ENABLE: {
+		LRESULT r = DefSubclassProc(h, msg, wp, lp);
+		RedrawWindow(h, NULL, NULL, RDW_FRAME | RDW_INVALIDATE);
+		return r;
+	}
+	case WM_NCDESTROY:
+		RemoveWindowSubclass(h, editSubclassProc, id);
+		delete st;
+		break;
+	}
+	return DefSubclassProc(h, msg, wp, lp);
+}
+
+void styleEdit(HWND h) {
+	LONG style = GetWindowLong(h, GWL_STYLE);
+	if (style & (WS_VSCROLL | WS_HSCROLL))
+		return; // có thanh cuộn: giữ nguyên
+	DWORD_PTR ref = 0;
+	if (GetWindowSubclass(h, editSubclassProc, 1, &ref))
+		return; // đã áp dụng
+	SetWindowLong(h, GWL_STYLE, style & ~WS_BORDER);
+	SetWindowLong(h, GWL_EXSTYLE, GetWindowLong(h, GWL_EXSTYLE) & ~WS_EX_CLIENTEDGE);
+	SetWindowSubclass(h, editSubclassProc, 1, (DWORD_PTR)new InputState{ false, false });
+	SetWindowPos(h, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
+// ---- ComboBox kiểu danh sách thả xuống: tự vẽ toàn bộ (khung bo góc, chữ mục đang chọn, mũi tên)
+void paintCombo(HWND h, HDC target, const InputState* st) {
+	RECT rc;
+	GetClientRect(h, &rc);
+	int w = rcW(rc), hh = rcH(rc);
+	if (w <= 0 || hh <= 0)
+		return;
+	bool disabled = !IsWindowEnabled(h);
+	bool dropped = SendMessage(h, CB_GETDROPPEDSTATE, 0, 0) != 0;
+	MemDC mem(target, w, hh);
+	HDC dc = mem.dc();
+	paintInputBox(dc, w, hh, h, disabled, GetFocus() == h || dropped, st && st->hot);
+
+	wchar_t text[256] = { 0 };
+	int sel = (int)SendMessage(h, CB_GETCURSEL, 0, 0);
+	if (sel != CB_ERR) {
+		int len = (int)SendMessage(h, CB_GETLBTEXTLEN, sel, 0);
+		if (len > 0 && len < 255)
+			SendMessage(h, CB_GETLBTEXT, sel, (LPARAM)text);
+	}
+	RECT tr = { px(kInputPadXPx + 2), 0, w - px(28), hh };
+	drawText(dc, text, tr, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS,
+			 disabled ? kTextDisabled : kTextPrimary, controlFont(h));
+
+	// mũi tên xổ xuống
+	{
+		float cx = (float)(w - px(15)), cy = hh / 2.0f;
+		float a = (float)px(4), b = (float)px(2);
+		Gdiplus::Graphics g(dc);
+		g.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+		g.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf); // tâm pixel ở nửa số nguyên: nét 1px đặt tại x.5 mới nằm gọn 1 hàng
+		Gdiplus::Pen pen(gcol(disabled ? kTextDisabled : kTextSecondary), (float)px(2) * 0.8f);
+		pen.SetStartCap(Gdiplus::LineCapRound);
+		pen.SetEndCap(Gdiplus::LineCapRound);
+		pen.SetLineJoin(Gdiplus::LineJoinRound);
+		Gdiplus::PointF pts[3] = { Gdiplus::PointF(cx - a, cy - b), Gdiplus::PointF(cx, cy + b), Gdiplus::PointF(cx + a, cy - b) };
+		g.DrawLines(&pen, pts, 3);
+	}
+	mem.flush(rc.left, rc.top);
+}
+
+LRESULT CALLBACK comboSubclassProc(HWND h, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR id, DWORD_PTR ref) {
+	InputState* st = (InputState*)ref;
+	switch (msg) {
+	case WM_ERASEBKGND:
+		return 1;
+	case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC dc = BeginPaint(h, &ps);
+		paintCombo(h, dc, st);
+		EndPaint(h, &ps);
+		return 0;
+	}
+	case WM_PRINTCLIENT:
+		paintCombo(h, (HDC)wp, st);
+		return 0;
+	case WM_MOUSEMOVE:
+		trackHot(h, st, false);
+		break;
+	case WM_MOUSELEAVE:
+		leaveHot(h, st, false);
+		break;
+	case WM_SETFOCUS:
+	case WM_KILLFOCUS:
+	case WM_ENABLE: {
+		LRESULT r = DefSubclassProc(h, msg, wp, lp);
+		InvalidateRect(h, NULL, FALSE);
+		return r;
+	}
+	case WM_NCDESTROY:
+		RemoveWindowSubclass(h, comboSubclassProc, id);
+		delete st;
+		break;
+	}
+	return DefSubclassProc(h, msg, wp, lp);
+}
+
+// Danh sách thả xuống của combobox là cửa sổ riêng: đặt theme để thanh cuộn khớp chế độ sáng/tối.
+void themeComboList(HWND h) {
+	COMBOBOXINFO cbi;
+	ZeroMemory(&cbi, sizeof(cbi));
+	cbi.cbSize = sizeof(cbi);
+	if (GetComboBoxInfo(h, &cbi) && cbi.hwndList)
+		SetWindowTheme(cbi.hwndList, isDark() ? L"DarkMode_Explorer" : L"Explorer", NULL);
+}
+
+void styleCombo(HWND h) {
+	if (((UINT)GetWindowLong(h, GWL_STYLE) & 0x3) != CBS_DROPDOWNLIST)
+		return; // chỉ kiểu danh sách thả xuống (không có ô nhập)
+	DWORD_PTR ref = 0;
+	if (!GetWindowSubclass(h, comboSubclassProc, 1, &ref)) {
+		SetWindowSubclass(h, comboSubclassProc, 1, (DWORD_PTR)new InputState{ false, false });
+		InvalidateRect(h, NULL, TRUE);
+	}
+	themeComboList(h);
+}
+
+/* ---------- SysLink: vẽ liên kết bằng màu nhấn (đọc được cả ở nền tối) ---------- */
+// Giữ nguyên hành vi của control (click, bàn phím, thông báo NM_CLICK): chỉ thay cách vẽ.
+wstring linkPlainText(HWND h) {
+	wchar_t buf[512] = { 0 };
+	GetWindowTextW(h, buf, 512);
+	wstring in(buf), out;
+	for (size_t i = 0; i < in.size(); i++) {
+		if (in[i] == L'<') {
+			size_t j = in.find(L'>', i);
+			if (j != wstring::npos) { i = j; continue; }
+		}
+		out += in[i];
+	}
+	return out;
+}
+
+void paintLink(HWND h, HDC target, const InputState* st) {
+	RECT rc;
+	GetClientRect(h, &rc);
+	int w = rcW(rc), hh = rcH(rc);
+	if (w <= 0 || hh <= 0)
+		return;
+	MemDC mem(target, w, hh);
+	HDC dc = mem.dc();
+	// để control tự dựng lại bố cục liên kết (phục vụ hit-test) rồi vẽ đè lên
+	DefSubclassProc(h, WM_PRINTCLIENT, (WPARAM)dc, PRF_CLIENT | PRF_ERASEBKGND);
+	RECT local = { 0, 0, w, hh };
+	fillRect(dc, local, bgFor(h));
+	LOGFONTW lf;
+	HFONT base = controlFont(h);
+	if (GetObjectW(base, sizeof(lf), &lf)) {
+		lf.lfUnderline = (st && st->hot) ? TRUE : FALSE;
+		HFONT f = CreateFontIndirectW(&lf);
+		wstring text = linkPlainText(h);
+		drawText(dc, text.c_str(), local, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS,
+				 (st && st->hot) ? kAccentHover : kAccent, f ? f : base);
+		if (f) DeleteObject(f);
+	}
+	mem.flush(rc.left, rc.top);
+}
+
+LRESULT CALLBACK linkSubclassProc(HWND h, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR id, DWORD_PTR ref) {
+	InputState* st = (InputState*)ref;
+	switch (msg) {
+	case WM_ERASEBKGND:
+		return 1;
+	case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC dc = BeginPaint(h, &ps);
+		paintLink(h, dc, st);
+		EndPaint(h, &ps);
+		return 0;
+	}
+	case WM_PRINTCLIENT:
+		paintLink(h, (HDC)wp, st);
+		return 0;
+	case WM_MOUSEMOVE:
+		trackHot(h, st, false);
+		break;
+	case WM_MOUSELEAVE:
+		leaveHot(h, st, false);
+		break;
+	case WM_NCDESTROY:
+		RemoveWindowSubclass(h, linkSubclassProc, id);
+		delete st;
+		break;
+	}
+	return DefSubclassProc(h, msg, wp, lp);
+}
+
+void styleLink(HWND h) {
+	DWORD_PTR ref = 0;
+	if (GetWindowSubclass(h, linkSubclassProc, 1, &ref))
+		return;
+	SetWindowSubclass(h, linkSubclassProc, 1, (DWORD_PTR)new InputState{ false, false });
+	InvalidateRect(h, NULL, TRUE);
+}
+
+/* ---------- Thanh tiêu đề: sáng/tối theo chế độ (Windows 10 20H1+ và Windows 11) ---------- */
+void applyTitleBar(HWND h, bool dark) {
 	typedef HRESULT (WINAPI *DwmSetWindowAttributeFn)(HWND, DWORD, LPCVOID, DWORD);
 	static DwmSetWindowAttributeFn fn = NULL;
 	static bool resolved = false;
@@ -641,12 +1029,13 @@ void applyTitleBar(HWND h) {
 	}
 	if (!fn)
 		return;
-	// Chỉ có tác dụng trên Windows 11 (build 22000+); các bản cũ bỏ qua lỗi và giữ thanh tiêu đề mặc định.
-	COLORREF caption = kSidebar, text = kTextOnDark;
-	fn(h, 35 /*DWMWA_CAPTION_COLOR*/, &caption, sizeof(caption));
-	fn(h, 36 /*DWMWA_TEXT_COLOR*/, &text, sizeof(text));
+	BOOL value = dark ? TRUE : FALSE;
+	// 20 = DWMWA_USE_IMMERSIVE_DARK_MODE; 19 là giá trị cũ của Windows 10 trước bản 20H1. Bản không hỗ trợ sẽ bỏ qua lỗi.
+	if (FAILED(fn(h, 20, &value, sizeof(value))))
+		fn(h, 19, &value, sizeof(value));
 }
 
+/* ---------- Áp dụng cho dialog ---------- */
 struct Child {
 	HWND h;
 	RECT r; // tọa độ client của parent
@@ -711,7 +1100,7 @@ void fitLabel(const vector<Child>& all, const Child& c, int parentW) {
 }
 
 void styleListView(HWND lv) {
-	SetWindowTheme(lv, L"Explorer", NULL);
+	SetWindowTheme(lv, isDark() ? L"DarkMode_Explorer" : L"Explorer", NULL);
 	ListView_SetExtendedListViewStyleEx(lv, LVS_EX_DOUBLEBUFFER, LVS_EX_DOUBLEBUFFER);
 	ListView_SetBkColor(lv, kCard);
 	ListView_SetTextBkColor(lv, kCard);
@@ -758,11 +1147,273 @@ void prepareChildren(HWND parent, bool allOnCard) {
 
 		if (isClass(c, L"SysListView32"))
 			styleListView(c);
+		else if (isClass(c, L"Edit"))
+			styleEdit(c);
+		else if (isClass(c, L"ComboBox"))
+			styleCombo(c);
+		else if (isClass(c, L"SysLink"))
+			styleLink(c);
 	}
 
 	// 3) nới nhãn bị thiếu chỗ
 	for (size_t i = 0; i < children.size(); i++)
 		fitLabel(children, children[i], rcW(pc));
+}
+
+/* ---------- Hộp thoại thông báo (thay MessageBox) ---------- */
+const int kMsgPadPx      = 24;   // lề trái/phải của vùng nội dung
+const int kMsgPadVPx     = 20;   // lề trên/dưới của vùng nội dung
+const int kMsgIconPx     = 40;
+const int kMsgGapPx      = 16;
+const int kMsgMinTextPx  = 200;
+const int kMsgMaxTextPx  = 380;
+const int kMsgBtnWPx     = 92;
+const int kMsgBtnHPx     = 32;
+const int kMsgBtnGapPx   = 8;
+const int kMsgFootPadPx  = 16;
+const int kMsgIconCtl    = 100;
+
+struct MsgBoxParams {
+	const wchar_t* text;
+	const wchar_t* caption;
+	UINT flags;
+	HFONT font;
+	int icon;              // 0 = không, 1 = thông tin, 2 = cảnh báo, 3 = lỗi, 4 = câu hỏi
+	int ids[3];
+	const wchar_t* labels[3];
+	int count;
+	int defIndex;
+	int cancelId;          // id trả về khi Esc / nút đóng; 0 = không cho đóng (như MB_YESNO của Windows)
+	int contentH;          // chiều cao vùng nội dung; thanh nút nằm bên dưới
+};
+
+void msgSetButton(MsgBoxParams& P, int index, int id, const wchar_t* label) {
+	P.ids[index] = id;
+	P.labels[index] = label;
+}
+
+void msgFillButtons(MsgBoxParams& P) {
+	switch (P.flags & MB_TYPEMASK) {
+	case MB_OKCANCEL:
+		P.count = 2; msgSetButton(P, 0, IDOK, L"Đồng ý"); msgSetButton(P, 1, IDCANCEL, L"Hủy");
+		P.cancelId = IDCANCEL;
+		break;
+	case MB_YESNO:
+		P.count = 2; msgSetButton(P, 0, IDYES, L"Có"); msgSetButton(P, 1, IDNO, L"Không");
+		P.cancelId = 0;
+		break;
+	case MB_YESNOCANCEL:
+		P.count = 3; msgSetButton(P, 0, IDYES, L"Có"); msgSetButton(P, 1, IDNO, L"Không"); msgSetButton(P, 2, IDCANCEL, L"Hủy");
+		P.cancelId = IDCANCEL;
+		break;
+	case MB_RETRYCANCEL:
+		P.count = 2; msgSetButton(P, 0, IDRETRY, L"Thử lại"); msgSetButton(P, 1, IDCANCEL, L"Hủy");
+		P.cancelId = IDCANCEL;
+		break;
+	default: // MB_OK
+		P.count = 1; msgSetButton(P, 0, IDOK, L"Đồng ý");
+		P.cancelId = IDOK;
+		break;
+	}
+	int def = (int)((P.flags & MB_DEFMASK) >> 8);
+	P.defIndex = def < P.count ? def : 0;
+}
+
+int msgIconKind(UINT flags) {
+	switch (flags & MB_ICONMASK) {
+	case MB_ICONHAND:        return 3;
+	case MB_ICONQUESTION:    return 4;
+	case MB_ICONEXCLAMATION: return 2;
+	case MB_ICONASTERISK:    return 1;
+	}
+	return 0;
+}
+
+HFONT glyphFont(int heightPx) {
+	LOGFONTW lf = { 0 };
+	lf.lfHeight = -heightPx;
+	lf.lfWeight = FW_NORMAL;
+	lf.lfCharSet = DEFAULT_CHARSET;
+	lf.lfQuality = CLEARTYPE_QUALITY;
+	lstrcpynW(lf.lfFaceName, L"Segoe UI Semibold", LF_FACESIZE);
+	return cachedFont(lf);
+}
+
+// Biểu tượng tròn + ký hiệu (i, !, ×, ?) vẽ bằng font chữ, không phụ thuộc font biểu tượng của Windows.
+void drawMsgIcon(const DRAWITEMSTRUCT* di, const MsgBoxParams* P) {
+	HDC dc = di->hDC;
+	int w = rcW(di->rcItem), hh = rcH(di->rcItem);
+	MemDC mem(dc, w, hh);
+	HDC m = mem.dc();
+	RECT local = { 0, 0, w, hh };
+	fillRect(m, local, kCard);
+	bool dark = isDark();
+	COLORREF fill = kAccent;
+	const wchar_t* glyph = L"i";
+	switch (P->icon) {
+	case 2: fill = dark ? RGB(0xF6, 0xB4, 0x45) : RGB(0xC7, 0x6A, 0x00); glyph = L"!"; break;
+	case 3: fill = kDanger; glyph = L"×"; break;
+	case 4: fill = kAccent; glyph = L"?"; break;
+	}
+	drawEllipse(m, 0, 0, (float)w, (float)hh, fill, CLR_NONE, 0.0f);
+	COLORREF ink = dark ? RGB(0x20, 0x20, 0x20) : RGB(0xFF, 0xFF, 0xFF);
+	drawText(m, glyph, local, DT_CENTER | DT_VCENTER | DT_SINGLELINE, ink, glyphFont(hh * 6 / 10));
+	mem.flush(di->rcItem.left, di->rcItem.top);
+}
+
+void msgCenter(HWND hDlg, int W, int H) {
+	HWND owner = GetWindow(hDlg, GW_OWNER);
+	RECT area;
+	HMONITOR mon = MonitorFromWindow(owner ? owner : hDlg, MONITOR_DEFAULTTOPRIMARY);
+	MONITORINFO mi;
+	ZeroMemory(&mi, sizeof(mi));
+	mi.cbSize = sizeof(mi);
+	if (GetMonitorInfo(mon, &mi))
+		area = mi.rcWork;
+	else
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &area, 0);
+	RECT ref = area;
+	if (owner && IsWindowVisible(owner) && !IsIconic(owner))
+		GetWindowRect(owner, &ref);
+	int x = ref.left + (rcW(ref) - W) / 2;
+	int y = ref.top + (rcH(ref) - H) / 2;
+	if (x + W > area.right) x = area.right - W;
+	if (y + H > area.bottom) y = area.bottom - H;
+	if (x < area.left) x = area.left;
+	if (y < area.top) y = area.top;
+	SetWindowPos(hDlg, NULL, x, y, W, H, SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
+void msgInit(HWND hDlg, MsgBoxParams* P) {
+	SetWindowText(hDlg, P->caption ? P->caption : L"");
+	applyTitleBar(hDlg, isDark());
+
+	// đo chữ
+	int maxW = px(kMsgMaxTextPx), minW = px(kMsgMinTextPx);
+	HDC dc = GetDC(hDlg);
+	HFONT old = (HFONT)SelectObject(dc, P->font);
+	RECT tr = { 0, 0, maxW, 0 };
+	DrawTextW(dc, P->text ? P->text : L"", -1, &tr, DT_CALCRECT | DT_WORDBREAK | DT_NOPREFIX);
+	SelectObject(dc, old);
+	ReleaseDC(hDlg, dc);
+	int textW = tr.right < minW ? minW : tr.right;
+	int textH = tr.bottom;
+
+	int iconD = P->icon ? px(kMsgIconPx) : 0;
+	int gap = P->icon ? px(kMsgGapPx) : 0;
+	int pad = px(kMsgPadPx), padV = px(kMsgPadVPx);
+	int innerH = textH > iconD ? textH : iconD;
+	P->contentH = padV + innerH + padV;
+	int contentW = pad + iconD + gap + textW + pad;
+
+	int btnW = px(kMsgBtnWPx), btnH = px(kMsgBtnHPx), btnGap = px(kMsgBtnGapPx), footPad = px(kMsgFootPadPx);
+	int rowW = P->count * btnW + (P->count - 1) * btnGap;
+	int clientW = contentW > rowW + 2 * footPad ? contentW : rowW + 2 * footPad;
+	int clientH = P->contentH + btnH + 2 * footPad;
+	textW += clientW - contentW; // chữ chiếm hết bề ngang còn lại
+
+	HINSTANCE inst = GetModuleHandle(NULL);
+	int x = pad;
+	if (P->icon) {
+		HWND ic = CreateWindowExW(0, L"STATIC", L"", WS_CHILD | WS_VISIBLE | SS_OWNERDRAW, x, padV + (innerH - iconD) / 2, iconD, iconD,
+								  hDlg, (HMENU)(INT_PTR)kMsgIconCtl, inst, NULL);
+		SetPropW(ic, kPropCard, (HANDLE)1);
+		x += iconD + gap;
+	}
+	HWND label = CreateWindowExW(0, L"STATIC", P->text ? P->text : L"", WS_CHILD | WS_VISIBLE | SS_LEFT | SS_NOPREFIX,
+								 x, padV + (innerH - textH) / 2, textW, textH + px(2), hDlg, (HMENU)(INT_PTR)-1, inst, NULL);
+	SendMessage(label, WM_SETFONT, (WPARAM)P->font, TRUE);
+	SetPropW(label, kPropCard, (HANDLE)1);
+
+	int bx = clientW - footPad - rowW;
+	int by = P->contentH + footPad;
+	HWND defBtn = NULL;
+	for (int i = 0; i < P->count; i++) {
+		bool isDef = i == P->defIndex;
+		HWND b = CreateWindowExW(0, L"BUTTON", P->labels[i],
+								 WS_CHILD | WS_VISIBLE | WS_TABSTOP | (isDef ? BS_DEFPUSHBUTTON : BS_PUSHBUTTON),
+								 bx, by, btnW, btnH, hDlg, (HMENU)(INT_PTR)P->ids[i], inst, NULL);
+		SendMessage(b, WM_SETFONT, (WPARAM)P->font, TRUE);
+		setButtonKind(b, isDef ? ButtonKind::Primary : ButtonKind::Secondary);
+		if (isDef) defBtn = b;
+		bx += btnW + btnGap;
+	}
+	if (defBtn)
+		SendMessage(hDlg, DM_SETDEFID, P->ids[P->defIndex], 0);
+
+	RECT wr = { 0, 0, clientW, clientH };
+	AdjustWindowRectEx(&wr, GetWindowLong(hDlg, GWL_STYLE), FALSE, GetWindowLong(hDlg, GWL_EXSTYLE));
+	msgCenter(hDlg, rcW(wr), rcH(wr));
+
+	switch (P->icon) {
+	case 1: MessageBeep(MB_ICONASTERISK); break;
+	case 2: MessageBeep(MB_ICONEXCLAMATION); break;
+	case 3: MessageBeep(MB_ICONHAND); break;
+	case 4: MessageBeep(MB_ICONQUESTION); break;
+	}
+	if (defBtn)
+		SetFocus(defBtn);
+}
+
+INT_PTR CALLBACK msgBoxProc(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp) {
+	MsgBoxParams* P = (MsgBoxParams*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+	switch (msg) {
+	case WM_INITDIALOG:
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lp);
+		msgInit(hDlg, (MsgBoxParams*)lp);
+		return FALSE; // đã tự đặt tiêu điểm
+	case WM_ERASEBKGND: {
+		if (!P) break;
+		HDC dc = (HDC)wp;
+		RECT rc;
+		GetClientRect(hDlg, &rc);
+		RECT content = { 0, 0, rc.right, P->contentH };
+		RECT line = { 0, P->contentH, rc.right, P->contentH + 1 };
+		fillRect(dc, rc, kBgMain);
+		fillRect(dc, content, kCard);
+		fillRect(dc, line, kBorder);
+		return TRUE;
+	}
+	case WM_DRAWITEM:
+		if (P && wp == kMsgIconCtl) {
+			drawMsgIcon((const DRAWITEMSTRUCT*)lp, P);
+			return TRUE;
+		}
+		break;
+	case WM_COMMAND: {
+		if (!P) break;
+		int id = LOWORD(wp);
+		if (id == IDCANCEL) { // Esc, hoặc nút Hủy
+			if (P->cancelId)
+				EndDialog(hDlg, P->cancelId);
+			return TRUE;
+		}
+		for (int i = 0; i < P->count; i++) {
+			if (id == P->ids[i]) {
+				EndDialog(hDlg, id);
+				return TRUE;
+			}
+		}
+		break;
+	}
+	case WM_CLOSE:
+		if (P && P->cancelId)
+			EndDialog(hDlg, P->cancelId);
+		return TRUE;
+	}
+	INT_PTR result = 0;
+	if (handleMessage(hDlg, msg, wp, lp, result))
+		return result;
+	return FALSE;
+}
+
+// Khi đổi chế độ sáng/tối: các control có theme riêng (ListView, danh sách thả xuống) phải đặt lại.
+BOOL CALLBACK restyleChildProc(HWND c, LPARAM) {
+	if (isClass(c, L"SysListView32"))
+		styleListView(c);
+	else if (isClass(c, L"ComboBox"))
+		themeComboList(c);
+	return TRUE;
 }
 
 } // namespace
@@ -793,9 +1444,85 @@ void apply(HWND hDlg) {
 	if (!isEnabled())
 		return;
 	ensureInit();
-	applyTitleBar(hDlg);
+	ensureTheme();
+	applyTitleBar(hDlg, isDark());
 	prepareChildren(hDlg, false);
 }
+
+/* ---------- Chế độ sáng / tối ---------- */
+void setMode(int mode) {
+	if (mode < 0 || mode > 2)
+		mode = 0;
+	g_mode = mode;
+	g_darkCache = -1;
+}
+
+int getMode() {
+	return g_mode;
+}
+
+bool isDark() {
+	if (g_darkCache < 0)
+		g_darkCache = computeDark() ? 1 : 0;
+	return g_darkCache == 1;
+}
+
+void refresh(HWND hTop) {
+	if (!isEnabled())
+		return;
+	ensureInit();
+	g_darkCache = -1;
+	ensureTheme();
+	if (!hTop)
+		return;
+	applyTitleBar(hTop, isDark());
+	EnumChildWindows(hTop, restyleChildProc, 0);
+	RedrawWindow(hTop, NULL, NULL, RDW_INVALIDATE | RDW_ERASE | RDW_FRAME | RDW_ALLCHILDREN | RDW_UPDATENOW);
+}
+
+int messageBox(HWND parent, const wchar_t* text, const wchar_t* caption, UINT flags) {
+	UINT type = flags & MB_TYPEMASK;
+	bool supported = type == MB_OK || type == MB_OKCANCEL || type == MB_YESNO || type == MB_YESNOCANCEL || type == MB_RETRYCANCEL;
+	if (!isEnabled() || !supported || (flags & MB_HELP))
+		return MessageBoxW(parent, text, caption, flags); // theme tắt hoặc kiểu nút không hỗ trợ: dùng của Windows
+	ensureInit();
+	ensureTheme();
+
+	MsgBoxParams P;
+	ZeroMemory(&P, sizeof(P));
+	P.text = text;
+	P.caption = caption;
+	P.flags = flags;
+	P.icon = msgIconKind(flags);
+	msgFillButtons(P);
+	NONCLIENTMETRICSW ncm;
+	ZeroMemory(&ncm, sizeof(ncm));
+	ncm.cbSize = sizeof(ncm);
+	if (SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0))
+		P.font = CreateFontIndirectW(&ncm.lfMessageFont);
+	if (!P.font)
+		P.font = (HFONT)GetStockObject(DEFAULT_GUI_FONT); // không xóa: font hệ thống
+
+	struct {
+		DLGTEMPLATE dt;
+		WORD menu;
+		WORD cls;
+		WORD title;
+	} tmpl;
+	ZeroMemory(&tmpl, sizeof(tmpl));
+	tmpl.dt.style = WS_POPUP | WS_CAPTION | DS_MODALFRAME | (P.cancelId ? WS_SYSMENU : 0) | ((parent == NULL || (flags & MB_SETFOREGROUND)) ? DS_SETFOREGROUND : 0);
+	tmpl.dt.dwExtendedStyle = (flags & MB_TOPMOST) ? WS_EX_TOPMOST : 0;
+	tmpl.dt.cx = 100;
+	tmpl.dt.cy = 50;
+
+	INT_PTR r = DialogBoxIndirectParamW(GetModuleHandle(NULL), (LPCDLGTEMPLATE)&tmpl, parent, msgBoxProc, (LPARAM)&P);
+	if (P.font != (HFONT)GetStockObject(DEFAULT_GUI_FONT))
+		DeleteObject(P.font);
+	if (r == -1 || r == 0)
+		return MessageBoxW(parent, text, caption, flags);
+	return (int)r;
+}
+
 
 void markPage(HWND hPage) {
 	SetPropW(hPage, kPropPage, (HANDLE)1);
@@ -805,6 +1532,7 @@ void applyPage(HWND hPage) {
 	if (!isEnabled())
 		return;
 	ensureInit();
+	ensureTheme();
 	markPage(hPage);
 	prepareChildren(hPage, true);
 }
@@ -873,88 +1601,27 @@ RECT tabPageRect(HWND hTab, HWND hParent) {
 	return rc;
 }
 
-void paintHeader(HDC hdc, const RECT& rc, HICON icon, const wchar_t* title,
-				 const wchar_t* subtitle, const wchar_t* status, bool statusOn, HFONT baseFont) {
-	int w = rcW(rc), hh = rcH(rc);
-	if (w <= 0 || hh <= 0)
-		return;
-
-	if (!isEnabled()) {
-		// Fallback: màu hệ thống (High Contrast / không có visual styles)
-		FillRect(hdc, &rc, GetSysColorBrush(COLOR_BTNFACE));
-		RECT tr = { rc.left + 8, rc.top, rc.right - 8, rc.bottom };
-		SetBkMode(hdc, TRANSPARENT);
-		SetTextColor(hdc, GetSysColor(COLOR_BTNTEXT));
-		HFONT old = (HFONT)SelectObject(hdc, baseFont ? baseFont : (HFONT)GetStockObject(DEFAULT_GUI_FONT));
-		wchar_t line[256];
-		wsprintfW(line, L"%s   %s", title, status);
-		DrawTextW(hdc, line, -1, &tr, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX);
-		SelectObject(hdc, old);
-		return;
-	}
-
-	ensureInit();
-	MemDC mem(hdc, w, hh);
-	HDC dc = mem.dc();
-	RECT local = { 0, 0, w, hh };
-	fillRect(dc, local, kSidebar);
-	RECT line = { 0, hh - 1, w, hh };
-	fillRect(dc, line, RGB(0x1E, 0x29, 0x3B));
-
-	int margin = px(14);
-	int x = margin;
-
-	int iconSize = px(24);
-	if (icon) {
-		DrawIconEx(dc, x, (hh - iconSize) / 2, icon, iconSize, iconSize, 0, NULL, DI_NORMAL);
-		x += iconSize + px(10);
-	}
-
-	HFONT titleFont = uiFont(12, true);
-	HFONT subFont = baseFont ? baseFont : uiFont(9, false);
-	int tw = textWidth(dc, titleFont, title);
-	RECT tr = { x, 0, x + tw + px(2), hh - 1 };
-	drawText(dc, title, tr, DT_LEFT | DT_VCENTER | DT_SINGLELINE, kTextOnDark, titleFont);
-	x += tw + px(10);
-
-	// pill trạng thái ở bên phải
-	int pillH = px(22);
-	int pillTextW = textWidth(dc, subFont, status);
-	int dot = px(8);
-	int pillW = px(10) + dot + px(6) + pillTextW + px(12);
-	int pillX = w - margin - pillW;
-	int pillY = (hh - 1 - pillH) / 2;
-
-	if (subtitle && subtitle[0]) {
-		int maxSubW = pillX - px(10) - x;
-		if (maxSubW > px(20)) {
-			RECT sr = { x, 0, x + maxSubW, hh - 1 };
-			drawText(dc, subtitle, sr, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS,
-					 kTextOnDarkMuted, subFont);
-		}
-	}
-
-	drawRound(dc, (float)pillX, (float)pillY, (float)pillW, (float)pillH, pillH / 2.0f,
-			  RGB(0x1E, 0x29, 0x3B), CLR_NONE, 0.0f);
-	drawEllipse(dc, (float)(pillX + px(10)), pillY + (pillH - dot) / 2.0f, (float)dot, (float)dot,
-				statusOn ? kSuccess : kTextOnDarkMuted, CLR_NONE, 0.0f);
-	RECT pr = { pillX + px(10) + dot + px(6), pillY, pillX + pillW - px(8), pillY + pillH };
-	drawText(dc, status, pr, DT_LEFT | DT_VCENTER | DT_SINGLELINE, kTextOnDark, subFont);
-
-	mem.flush(rc.left, rc.top);
-}
-
 bool handleMessage(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp, INT_PTR& result) {
 	switch (msg) {
 	case WM_THEMECHANGED:
 	case WM_SYSCOLORCHANGE:
+		g_enabledCache = -1;
+		g_darkCache = -1;
+		return false;
 	case WM_SETTINGCHANGE:
 		g_enabledCache = -1;
+		g_darkCache = -1;
+		// Windows đổi giao diện sáng/tối khi dialog đang mở (chỉ khi đang "theo Windows"): đổi theo ngay
+		if (lp != 0 && g_mode == 0 && g_appliedDark >= 0 && lstrcmpW((LPCWSTR)lp, L"ImmersiveColorSet") == 0 && isEnabled()) {
+			if ((computeDark() ? 1 : 0) != g_appliedDark)
+				refresh(hDlg);
+		}
 		return false;
 	}
 	if (!isEnabled())
 		return false;
 	ensureInit();
+	ensureTheme();
 
 	switch (msg) {
 	case WM_CTLCOLORDLG:
@@ -968,6 +1635,18 @@ bool handleMessage(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp, INT_PTR& result) {
 		result = TRUE;
 		return true;
 	}
+
+	case WM_PAINT:
+		// Trang của tab tự vẽ nền: trước đây dùng COLOR_WINDOW (trắng) nên ở giao diện tối lộ ra khối trắng sau các ô chọn
+		if (isPage(hDlg)) {
+			PAINTSTRUCT ps;
+			HDC dc = BeginPaint(hDlg, &ps);
+			FillRect(dc, &ps.rcPaint, g_brCard);
+			EndPaint(hDlg, &ps);
+			result = TRUE;
+			return true;
+		}
+		return false;
 
 	case WM_CTLCOLORSTATIC:
 	case WM_CTLCOLORBTN: {
@@ -985,7 +1664,7 @@ bool handleMessage(HWND hDlg, UINT msg, WPARAM wp, LPARAM lp, INT_PTR& result) {
 		LabelRole role = (LabelRole)(INT_PTR)GetPropW(c, kPropRole);
 		COLORREF color = kTextPrimary;
 		if (role == LabelRole::Title)
-			color = kPrimary;
+			color = kTextPrimary;
 		else if (role == LabelRole::Muted)
 			color = card ? kTextSecondary : kTextMuted;
 		if (disabled)

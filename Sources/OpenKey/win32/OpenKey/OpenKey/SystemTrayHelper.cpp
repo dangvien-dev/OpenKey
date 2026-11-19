@@ -69,7 +69,7 @@ map<UINT, LPCTSTR> menuData = {
 	{POPUP_QUICK_CONVERT, _T("Chuyển mã nhanh")},
 	{POPUP_MACRO_TABLE, _T("Cấu hình gõ tắt...")},
 	{POPUP_CONTROL_PANEL, _T("Bảng điều khiển...")},
-	{POPUP_ABOUT_OPENKEY, _T("Giới thiệu OpenKey")},
+	{POPUP_ABOUT_OPENKEY, _T("Giới thiệu TechVKey")},
 	{POPUP_OPENKEY_EXIT, _T("Thoát")},
 };
 
@@ -82,6 +82,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		break;
 	case WM_USER+2019:
 		AppDelegate::getInstance()->onControlPanel();
+		break;
+	case WM_APP_UPDATE_AVAILABLE:
+		AppDelegate::getInstance()->onUpdateAvailable((std::string*)lParam);
 		break;
 	case WM_TRAYMESSAGE: {
 		if (lParam == WM_LBUTTONDBLCLK) {
@@ -163,6 +166,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 		}
 	}
 	break;
+	case WM_SETTINGCHANGE:
+		//người dùng đổi giao diện sáng/tối của Windows: chọn lại biểu tượng cho hợp màu taskbar
+		if (lParam != 0 && lstrcmp((LPCTSTR)lParam, _T("ImmersiveColorSet")) == 0) {
+			SystemTrayHelper::updateData();
+		}
+		break;
 	default:
 		// if the taskbar is restarted, add the system tray icon again
 		if (message == taskbarCreated) {
@@ -239,14 +248,29 @@ void SystemTrayHelper::createPopupMenu() {
 	SetMenuDefaultItem(popupMenu, POPUP_CONTROL_PANEL, false);
 }
 
+//Thanh taskbar đang ở giao diện sáng? Windows 10 (1903 trở lên) và Windows 11 lưu ở SystemUsesLightTheme (1 = sáng).
+//Không đọc được thì coi như tối, đúng như hành vi cũ.
+static bool isTaskbarLight() {
+	HKEY key;
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"), 0, KEY_READ, &key) != ERROR_SUCCESS) {
+		return false;
+	}
+	DWORD value = 0, size = sizeof(value), type = 0;
+	LONG rc = RegQueryValueEx(key, _T("SystemUsesLightTheme"), NULL, &type, (LPBYTE)&value, &size);
+	RegCloseKey(key);
+	return rc == ERROR_SUCCESS && type == REG_DWORD && value != 0;
+}
+
 static void loadTrayIcon() {
 	int icon = 0;
+	//biểu tượng "hiện đại" là chữ trắng, chìm mất trên taskbar sáng: dùng bản chữ đậm
+	const bool darkGlyph = vUseGrayIcon && isTaskbarLight();
 	if (vLanguage) {
-		icon = vUseGrayIcon ? IDI_ICON_STATUS_VIET_10 : IDI_ICON_STATUS_VIET;
+		icon = vUseGrayIcon ? (darkGlyph ? IDI_ICON_STATUS_VIET_10_DARK : IDI_ICON_STATUS_VIET_10) : IDI_ICON_STATUS_VIET;
 		LoadString(GetModuleHandle(0), IDS_TRAY_TITLE_2, nid.szTip, 128);
 	}
 	else {
-		icon = vUseGrayIcon ? IDI_ICON_STATUS_ENG_10 : IDI_ICON_STATUS_ENG;
+		icon = vUseGrayIcon ? (darkGlyph ? IDI_ICON_STATUS_ENG_10_DARK : IDI_ICON_STATUS_ENG_10) : IDI_ICON_STATUS_ENG;
 		LoadString(GetModuleHandle(0), IDS_TRAY_TITLE, nid.szTip, 128);
 	}
 	nid.hIcon = LoadIcon(GetModuleHandle(0), MAKEINTRESOURCE(icon));
